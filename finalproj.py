@@ -1,11 +1,13 @@
 from bs4 import BeautifulSoup
 import requests
 import json
-import secrets
 import webbrowser
+import csv
+import sqlite3
 
 CACHE_FILENAME = "covid_cache.json"
 CACHE_DICT = {}
+DB_NAME = "covid_data.sqlite"
 
 #########################################################
 ###                                                   ###
@@ -35,11 +37,6 @@ def build_county_url_dict():
 
     return data_dict
 
-#########################################################
-###                                                   ###
-### CREATING DICTIONARY W/ 4 KEY:VALUE PAIRS FOR DATA ###
-###                                                   ###
-#########################################################
 def launch_dataset_webpage(dataset):
     return webbrowser.open(dataset)
 
@@ -48,15 +45,15 @@ def launch_dataset_webpage(dataset):
 ### COLLECTING DATA FROM ONE SPECIFIC PAGE (POPULATION) ###
 ### *** having trouble here                             ###
 ###########################################################
-pop_url = "https://data.ers.usda.gov/reports.aspx?ID=17829"
-pop_response = requests.get(pop_url)
-pop_soup = BeautifulSoup(pop_response.text, "html.parser")
+# pop_url = "https://data.ers.usda.gov/reports.aspx?ID=17829"
+# pop_response = requests.get(pop_url)
+# pop_soup = BeautifulSoup(pop_response.text, "html.parser")
 # print(pop_soup.prettify())
 
 
 
-pop_data_table = pop_soup.find("a", title="Excel")
-pop_data_table = pop_soup.find("table", class_="P89563b08bc53465683c0bb7d1b5395f0_1_r10")
+# pop_data_table = pop_soup.find("a", title="Excel")
+# pop_data_table = pop_soup.find("table", class_="P89563b08bc53465683c0bb7d1b5395f0_1_r10")
 # print(f"\n\n\n\n")
 # print(pop_data_table)
 
@@ -100,9 +97,109 @@ def npr_covid():
     
     return covid_nums
 
-def write_to_json(filename, data):
-    with open(filename, "w") as file_obj:
-        json.dump(data, file_obj, indent=4)
+### do i even need this?
+# def read_csv(filename):
+# data_header = []
+# data_rows = []
+# with open("us-counties.csv", 'r') as csvfile:
+#     data = []
+#     csv_header = csv.reader(csvfile)
+#     for h in csv_header:
+#         data.append(h)
+#     data_header.extend(data[0])
+#     data_rows.extend(data[1:])
+
+# print(f"HEADER: {data_header}")
+# print(f"ROWS: {data_rows}")
+
+def create_database():
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+
+    drop_county_covid_sql = "DROP TABLE IF EXISTS 'County'"
+    drop_state_covid_sql = "DROP TABLE IF EXISTS 'State'"
+
+    create_county_covid_sql = '''
+        CREATE TABLE IF NOT EXISTS "County" (
+            "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
+            "Date" TEXT NOT NULL,
+            "County" TEXT NOT NULL,
+            "State" TEXT NOT NULL,
+            "Fips" INTEGER NOT NULL,
+            "Cases" INTEGER,
+            "Deaths" INTEGER
+        )
+    '''
+
+    create_state_covid_sql = '''
+        CREATE TABLE IF NOT EXISTS "State" (
+            "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
+            "State" TEXT NOT NULL,
+            "Cases" INTEGER NOT NULL,
+            "Deaths" INTEGER NOT NULL
+        )
+    '''
+
+    cur.execute(drop_county_covid_sql)
+    cur.execute(drop_state_covid_sql)
+    cur.execute(create_county_covid_sql)
+    cur.execute(create_state_covid_sql)
+    conn.commit()
+    conn.close()
+
+def load_county_covid():
+    data_header = []
+    data_rows = []
+
+    with open("us-counties.csv", 'r') as csvfile:
+        data = []
+        csv_header = csv.reader(csvfile)
+        for h in csv_header:
+            data.append(h)
+        data_header.extend(data[0])
+        data_rows.extend(data[1:])
+
+    insert_county_covid_sql = '''
+        INSERT INTO County
+        VALUES (NULL, ?, ? , ?, ?, ?, ?)
+    '''
+
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+
+    for dr in data_rows:
+        # print(dr[5])
+        cur.execute(insert_county_covid_sql, [
+            dr[0],
+            dr[1],
+            dr[2],
+            dr[3],
+            dr[4],
+            dr[5]
+        ])
+
+    conn.commit()
+    conn.close()
+
+def load_state_covid():
+    
+    insert_state_covid_sql = '''
+        INSERT INTO State
+        Values (NULL, ?, ?, ?)
+    '''
+
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+
+    for k,v in npr_covid().items():
+        cur.execute(insert_state_covid_sql, [
+            k,
+            v['cases'],
+            v['deaths']
+        ])
+    
+    conn.commit()
+    conn.close()
 
 def clean_data(data):
     try:
@@ -110,6 +207,10 @@ def clean_data(data):
     except:
         data = data.replace(',','')
         return int(data)
+
+def write_to_json(filename, data):
+    with open(filename, "w") as file_obj:
+        json.dump(data, file_obj, indent=4)
 
 def open_cache():
     ''' Opens the cache file if it exists and loads the JSON into
@@ -132,7 +233,6 @@ def open_cache():
     except:
         cache_dict = {}
     return cache_dict
-
 
 def save_cache(cache_dict):
     ''' Saves the current state of the cache to disk
@@ -182,15 +282,19 @@ if __name__ == "__main__":
     CACHE_DICT = open_cache()
     TEMP_LIST = []
 
-    print(f"\nHere are the datasets available for analysis.\n")
+    # create_database()
+    # load_county_covid()
+    # load_state_covid()
 
-    counter = 1
-    for k,v in build_county_url_dict().items():
-        print(f"[{counter}] {k}")
-        TEMP_LIST.append(v)
-        counter += 1
+    # print(f"\nHere are the datasets available for analysis.\n")
+
+    # counter = 1
+    # for k,v in build_county_url_dict().items():
+    #     print(f"[{counter}] {k}")
+    #     TEMP_LIST.append(v)
+    #     counter += 1
     
-    write_to_json("US_Covid.json", npr_covid())
+    # write_to_json("US_Covid.json", npr_covid())
 
     # while True:
         # webpage = input(f"\nChoose a number to launch the webpage for the respective dataset or 'exit':\n")
@@ -202,10 +306,10 @@ if __name__ == "__main__":
         #         for i in range(len(TEMP_LIST)):
         #             launch_dataset_webpage(TEMP_LIST[webpage_num - 1])
 
-    while True:
-        covid_data = input(f"\nWould you like to see COVID-19 data for the United States? Enter 'yes' or 'exit'.\n")
-        if covid_data.lower() == "exit":
-            exit()
-        elif covid_data.lower() == "yes":
-            for k,v in npr_covid().items():
-                print(f"{k}: cases - {v['cases']} | deaths - {v['deaths']}")
+    # while True:
+        # covid_data = input(f"\nWould you like to see COVID-19 data for the United States? Enter 'yes' or 'exit'.\n")
+        # if covid_data.lower() == "exit":
+        #     exit()
+        # elif covid_data.lower() == "yes":
+        #     for k,v in npr_covid().items():
+        #         print(f"{k}: cases - {v['cases']} | deaths - {v['deaths']}")
