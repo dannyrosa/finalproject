@@ -110,6 +110,22 @@ def build_usda_ers_dict(dict1, dict2, dict3, dict4, dict5, dict6):
 
     return socioecon2
 
+def build_mi_usda_ers_dict(dict1, dict2, dict3, dict4, dict5, dict6):
+    socioecon = {**dict1, **dict2, **dict3, **dict4, **dict5, **dict6}
+
+    for key, value in socioecon.items():
+        if key in dict1 and key in dict2 and key in dict3 and key in dict4 and key in dict5 and key in dict6:
+            socioecon[key] = [
+                value,
+                dict1[key],
+                dict2[key],
+                dict3[key],
+                dict4[key],
+                dict5[key]
+            ]
+
+    return socioecon
+
 def build_socioecon_dict(names, data, key):
     socioecon = {}
     for i in range(len(names)):
@@ -343,9 +359,66 @@ if __name__ == "__main__":
     unemp_dict = build_socioecon_dict(unemp_names, unemp_perc, "Unemployment Rate")
     med_income_dict = build_socioecon_dict(med_income_names, income_to_int(med_income), "Median Household Income")
     
-    usda_ers_data = build_usda_ers_dict(pop_dict, poverty_dict, comp_hs_only_dict, comp_coll_dict,unemp_dict, med_income_dict)
+    usda_ers_data = build_usda_ers_dict(pop_dict, poverty_dict, comp_hs_only_dict, comp_coll_dict, unemp_dict, med_income_dict)
 
     write_to_json("USDA_ERS_Data.json", usda_ers_data)
+
+    # getting michigan socioeconomic data
+    mi_comp_coll_names = get_excel_data("socioeconomic_data/MIEducationReportCompColl.xlsx", "EducationReport", 'B5:B87')
+    mi_comp_coll_perc = get_excel_data("socioeconomic_data/MIEducationReportCompColl.xlsx", "EducationReport", 'I5:I87')
+
+    mi_comp_hs_only_names = get_excel_data("socioeconomic_data/MIEducationReportHSOnly.xlsx", "EducationReport", 'B5:B87')
+    mi_comp_hs_only = get_excel_data("socioeconomic_data/MIEducationReportHSOnly.xlsx", "EducationReport", 'I5:I87')
+
+    mi_pop_names = get_excel_data("socioeconomic_data/MIPopulationReport.xlsx", "PopulationReport", 'B5:B87')
+    mi_pop_num = get_excel_data("socioeconomic_data/MIPopulationReport.xlsx", "PopulationReport", 'G5:G87')
+
+    mi_poverty_names = get_excel_data("socioeconomic_data/MIPovertyReport.xlsx", "PovertyReport", 'D7:D89')
+    mi_poverty_perc = get_excel_data("socioeconomic_data/MIPovertyReport.xlsx", "PovertyReport", 'G7:G89')
+
+    mi_unemp_names = get_excel_data("socioeconomic_data/MIUnemploymentReport.xlsx", "UnemploymentReport", 'B4:B86')
+    mi_unemp_perc = get_excel_data("socioeconomic_data/MIUnemploymentReport.xlsx", "UnemploymentReport", 'K4:K86')
+
+    mi_med_income_names = get_excel_data("socioeconomic_data/MIUnemploymentReport.xlsx", "UnemploymentReport", 'B4:B86')
+    mi_med_income = get_excel_data("socioeconomic_data/MIUnemploymentReport.xlsx", "UnemploymentReport", 'L4:L86')
+
+    # cleaning michigan names
+    mi_comp_coll_names_cleaned = []
+    for counties in mi_comp_coll_names:
+        split_counties = counties.split(',')
+        mi_comp_coll_names_cleaned.append(split_counties[0])
+    
+    mi_comp_hs_only_names_cleaned = []
+    for counties in mi_comp_hs_only_names:
+        split_counties = counties.split(',')
+        mi_comp_hs_only_names_cleaned.append(split_counties[0])
+
+    mi_pop_names_cleaned = []
+    for counties in mi_pop_names:
+        split_counties = counties.replace('County','')
+        mi_pop_names_cleaned.append(split_counties.strip())
+
+    mi_unemp_names_cleaned = []
+    for counties in mi_unemp_names:
+        split_counties = counties.replace("County, MI", '')
+        mi_unemp_names_cleaned.append(split_counties.strip())
+
+    mi_med_income_names_cleaned = []
+    for counties in mi_med_income_names:
+        split_counties = counties.replace("County, MI", '')
+        mi_med_income_names_cleaned.append(split_counties.strip())
+
+    # building michigan socioeconomic dictionaries
+    mi_comp_coll_dict = build_socioecon_dict(mi_comp_coll_names_cleaned, convert_to_percent(mi_comp_coll_perc), "College Completion Rate")
+    mi_comp_hs_only_dict = build_socioecon_dict(mi_comp_hs_only_names_cleaned, convert_to_percent(mi_comp_hs_only), "Completed HS Only Rate")
+    mi_poverty_dict = build_socioecon_dict(mi_poverty_names, mi_poverty_perc, "Poverty Rate")
+    mi_pop_dict = build_socioecon_dict(mi_pop_names_cleaned, mi_pop_num, "Population")
+    mi_unemp_dict = build_socioecon_dict(mi_unemp_names_cleaned, mi_unemp_perc, "Unemployment Rate")
+    mi_med_income_dict = build_socioecon_dict(mi_med_income_names_cleaned, mi_med_income, "Median Household Income")
+
+    mi_usda_ers_data = build_usda_ers_dict(mi_pop_dict, mi_poverty_dict, mi_comp_hs_only_dict, mi_comp_coll_dict, mi_unemp_dict, mi_med_income_dict)
+
+    write_to_json("MI_USDA_ERS_Data.json", mi_usda_ers_data)
 
     # write_to_json("US_Covid.json", npr_covid_data_dict())
 
