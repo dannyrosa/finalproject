@@ -1,215 +1,215 @@
 {
     "United States": {
-        "cases": 758934,
-        "deaths": 40661
+        "cases": 811884,
+        "deaths": 44444
     },
     "New York": {
-        "cases": 247815,
-        "deaths": 18298
+        "cases": 258361,
+        "deaths": 19104
     },
     "New Jersey": {
-        "cases": 85301,
-        "deaths": 4362
+        "cases": 92387,
+        "deaths": 4753
     },
     "Massachusetts": {
-        "cases": 38077,
-        "deaths": 1706
-    },
-    "Pennsylvania": {
-        "cases": 32902,
-        "deaths": 1276
+        "cases": 41199,
+        "deaths": 1961
     },
     "California": {
-        "cases": 31431,
-        "deaths": 1177
+        "cases": 35465,
+        "deaths": 1282
     },
-    "Michigan": {
-        "cases": 31424,
-        "deaths": 2391
+    "Pennsylvania": {
+        "cases": 35249,
+        "deaths": 1614
     },
     "Illinois": {
-        "cases": 30357,
-        "deaths": 1290
+        "cases": 33059,
+        "deaths": 1468
+    },
+    "Michigan": {
+        "cases": 32667,
+        "deaths": 2575
     },
     "Florida": {
-        "cases": 26314,
-        "deaths": 774
+        "cases": 27869,
+        "deaths": 867
     },
     "Louisiana": {
-        "cases": 23928,
-        "deaths": 1296
+        "cases": 24854,
+        "deaths": 1405
     },
     "Texas": {
-        "cases": 19260,
-        "deaths": 490
-    },
-    "Georgia": {
-        "cases": 18301,
-        "deaths": 687
+        "cases": 20574,
+        "deaths": 533
     },
     "Connecticut": {
-        "cases": 17962,
-        "deaths": 1127
+        "cases": 20360,
+        "deaths": 1423
+    },
+    "Georgia": {
+        "cases": 19881,
+        "deaths": 798
     },
     "Maryland": {
-        "cases": 12847,
-        "deaths": 461
-    },
-    "Washington": {
-        "cases": 12255,
-        "deaths": 636
+        "cases": 14193,
+        "deaths": 652
     },
     "Ohio": {
-        "cases": 11602,
-        "deaths": 471
+        "cases": 13725,
+        "deaths": 557
+    },
+    "Washington": {
+        "cases": 12563,
+        "deaths": 664
     },
     "Indiana": {
-        "cases": 11211,
-        "deaths": 562
+        "cases": 12097,
+        "deaths": 635
     },
     "Colorado": {
-        "cases": 9730,
-        "deaths": 420
+        "cases": 10473,
+        "deaths": 483
     },
     "Virginia": {
-        "cases": 8542,
-        "deaths": 277
+        "cases": 9630,
+        "deaths": 324
     },
     "Tennessee": {
-        "cases": 7070,
-        "deaths": 148
-    },
-    "North Carolina": {
-        "cases": 6601,
-        "deaths": 200
-    },
-    "Missouri": {
-        "cases": 5743,
-        "deaths": 199
-    },
-    "Arizona": {
-        "cases": 4933,
-        "deaths": 184
-    },
-    "Alabama": {
-        "cases": 4888,
+        "cases": 7394,
         "deaths": 157
     },
+    "North Carolina": {
+        "cases": 7134,
+        "deaths": 245
+    },
+    "Missouri": {
+        "cases": 6066,
+        "deaths": 224
+    },
     "Rhode Island": {
-        "cases": 4706,
-        "deaths": 150
+        "cases": 5500,
+        "deaths": 171
     },
-    "South Carolina": {
-        "cases": 4377,
-        "deaths": 120
+    "Alabama": {
+        "cases": 5317,
+        "deaths": 183
     },
-    "Wisconsin": {
-        "cases": 4346,
-        "deaths": 220
+    "Arizona": {
+        "cases": 5256,
+        "deaths": 208
     },
     "Mississippi": {
-        "cases": 4274,
-        "deaths": 159
+        "cases": 4716,
+        "deaths": 183
+    },
+    "Wisconsin": {
+        "cases": 4625,
+        "deaths": 244
+    },
+    "South Carolina": {
+        "cases": 4439,
+        "deaths": 124
     },
     "Nevada": {
-        "cases": 3728,
-        "deaths": 158
-    },
-    "Utah": {
-        "cases": 3069,
-        "deaths": 27
-    },
-    "Kentucky": {
-        "cases": 2960,
-        "deaths": 146
+        "cases": 3937,
+        "deaths": 163
     },
     "Iowa": {
-        "cases": 2902,
-        "deaths": 75
+        "cases": 3641,
+        "deaths": 83
+    },
+    "Utah": {
+        "cases": 3297,
+        "deaths": 32
+    },
+    "Kentucky": {
+        "cases": 3204,
+        "deaths": 171
     },
     "District of Columbia": {
-        "cases": 2793,
-        "deaths": 96
-    },
-    "Oklahoma": {
-        "cases": 2567,
-        "deaths": 140
+        "cases": 3098,
+        "deaths": 112
     },
     "Delaware": {
-        "cases": 2538,
-        "deaths": 67
+        "cases": 2931,
+        "deaths": 82
+    },
+    "Oklahoma": {
+        "cases": 2807,
+        "deaths": 164
     },
     "Minnesota": {
-        "cases": 2356,
-        "deaths": 134
-    },
-    "Oregon": {
-        "cases": 1910,
-        "deaths": 74
+        "cases": 2567,
+        "deaths": 160
     },
     "Kansas": {
-        "cases": 1905,
-        "deaths": 93
+        "cases": 2164,
+        "deaths": 109
     },
-    "New Mexico": {
-        "cases": 1845,
-        "deaths": 55
+    "Oregon": {
+        "cases": 2004,
+        "deaths": 78
     },
     "Arkansas": {
-        "cases": 1781,
-        "deaths": 39
+        "cases": 1990,
+        "deaths": 42
     },
-    "Idaho": {
-        "cases": 1668,
-        "deaths": 44
+    "New Mexico": {
+        "cases": 1971,
+        "deaths": 58
     },
     "South Dakota": {
-        "cases": 1635,
-        "deaths": 7
+        "cases": 1755,
+        "deaths": 8
+    },
+    "Idaho": {
+        "cases": 1736,
+        "deaths": 48
     },
     "Nebraska": {
-        "cases": 1474,
-        "deaths": 28
+        "cases": 1685,
+        "deaths": 33
     },
     "New Hampshire": {
-        "cases": 1390,
-        "deaths": 38
+        "cases": 1490,
+        "deaths": 42
     },
     "Puerto Rico": {
-        "cases": 1213,
-        "deaths": 62
+        "cases": 1298,
+        "deaths": 64
     },
     "West Virginia": {
-        "cases": 890,
-        "deaths": 18
+        "cases": 908,
+        "deaths": 26
     },
     "Maine": {
-        "cases": 867,
-        "deaths": 34
+        "cases": 888,
+        "deaths": 36
     },
     "Vermont": {
-        "cases": 813,
-        "deaths": 38
+        "cases": 818,
+        "deaths": 40
     },
     "North Dakota": {
-        "cases": 585,
-        "deaths": 9
+        "cases": 644,
+        "deaths": 13
     },
     "Hawaii": {
-        "cases": 580,
+        "cases": 586,
         "deaths": 10
-    },
-    "Montana": {
-        "cases": 433,
-        "deaths": 10
-    },
-    "Alaska": {
-        "cases": 319,
-        "deaths": 9
     },
     "Wyoming": {
-        "cases": 313,
+        "cases": 443,
         "deaths": 2
+    },
+    "Montana": {
+        "cases": 437,
+        "deaths": 12
+    },
+    "Alaska": {
+        "cases": 329,
+        "deaths": 9
     },
     "Guam": {
         "cases": 136,

@@ -110,22 +110,6 @@ def build_usda_ers_dict(dict1, dict2, dict3, dict4, dict5, dict6):
 
     return socioecon2
 
-def build_mi_usda_ers_dict(dict1, dict2, dict3, dict4, dict5, dict6):
-    socioecon = {**dict1, **dict2, **dict3, **dict4, **dict5, **dict6}
-
-    for key, value in socioecon.items():
-        if key in dict1 and key in dict2 and key in dict3 and key in dict4 and key in dict5 and key in dict6:
-            socioecon[key] = [
-                value,
-                dict1[key],
-                dict2[key],
-                dict3[key],
-                dict4[key],
-                dict5[key]
-            ]
-
-    return socioecon
-
 def build_socioecon_dict(names, data, key):
     socioecon = {}
     for i in range(len(names)):
@@ -154,6 +138,8 @@ def create_database():
 
     drop_county_covid_sql = "DROP TABLE IF EXISTS 'CovidCounty'"
     drop_state_covid_sql = "DROP TABLE IF EXISTS 'CovidState'"
+    drop_states_usda_sql = "DROP TABLE IF EXISTS 'SocioeconomicStates'"
+    drop_mi_usda_sql = "DROP TABLE IF EXISTS 'SocioecnomicMichigan'"
 
     create_county_covid_sql = '''
         CREATE TABLE IF NOT EXISTS "CovidCounty" (
@@ -176,10 +162,40 @@ def create_database():
         )
     '''
 
+    create_states_usda_sql = '''
+        CREATE TABLE IF NOT EXISTS "SocioeconomicStates" (
+            "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
+            "State" TEXT NOT NULL,
+            "Population" INTEGER NOT NULL,
+            "MedianIncome" INTEGER NOT NULL,
+            "PovertyRate" DECIMAL NOT NULL,
+            "UnemploymentRate" DECIMAL NOT NULL,
+            "CompHSOnlyRate" DECIMAL NOT NULL,
+            "CompCollRate" DECIMAL NOT NULL
+        )
+    '''
+
+    create_mi_usda_sql = '''
+    CREATE TABLE IF NOT EXISTS "SocioeconomicMichigan" (
+            "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
+            "County" TEXT NOT NULL,
+            "Population" INTEGER NOT NULL,
+            "MedianIncome" INTEGER NOT NULL,
+            "PovertyRate" DECIMAL NOT NULL,
+            "UnemploymentRate" DECIMAL NOT NULL,
+            "CompHSOnlyRate" DECIMAL NOT NULL,
+            "CompCollRate" DECIMAL NOT NULL
+        )
+    '''
+
     cur.execute(drop_county_covid_sql)
     cur.execute(drop_state_covid_sql)
+    cur.execute(drop_states_usda_sql)
+    cur.execute(drop_mi_usda_sql)
     cur.execute(create_county_covid_sql)
     cur.execute(create_state_covid_sql)
+    cur.execute(create_states_usda_sql)
+    cur.execute(create_mi_usda_sql)
 
     conn.commit()
     conn.close()
@@ -216,15 +232,48 @@ def load_covid_data():
 
     insert_state_covid_sql = '''
         INSERT INTO CovidState
-        Values (NULL, ?, ?, ?)
+        VALUES (NULL, ?, ?, ?)
     '''
 
-    for k,v in npr_covid().items():
+    for k,v in npr_covid_data_dict().items():
         cur.execute(insert_state_covid_sql, [
             k,
             v['cases'],
             v['deaths']
         ])
+    
+    insert_state_ers_sql = '''
+        INSERT INTO SocioeconomicStates
+        VALUES (Null, ?, ?, ?, ?, ?, ?, ?)
+    '''
+    
+    with open("USDA_ERS_Data.json") as file_obj:
+        for k, v in json.load(file_obj).items():
+            cur.execute(insert_state_ers_sql, [
+                k,
+                v['Population'],
+                v['Median Household Income'],
+                v['Poverty Rate'],
+                v['Unemployment Rate'],
+                v['Completed HS Only Rate'],
+                v['College Completion Rate']
+            ])
+
+    insert_mi_ers_sql = '''
+        INSERT INTO SocioeconomicMichigan
+        VALUES (Null, ?, ?, ?, ?, ?, ?, ?)
+    '''
+    with open("MI_USDA_ERS_Data.json") as file_obj:
+        for k, v in json.load(file_obj).items():
+            cur.execute(insert_mi_ers_sql, [
+                k,
+                v['Population'],
+                v['Median Household Income'],
+                v['Poverty Rate'],
+                v['Unemployment Rate'],
+                v['Completed HS Only Rate'],
+                v['College Completion Rate']
+            ])
 
     conn.commit()
     conn.close()
@@ -329,8 +378,8 @@ if __name__ == "__main__":
     CACHE_DICT = open_cache()
     TEMP_LIST = []
 
-    # create_database()
-    # load_covid_data()
+    create_database()
+    load_covid_data()
 
     # getting state socioeconomic data
     comp_coll_names = get_excel_data("socioeconomic_data/EducationReportCompColl.xlsx", "EducationReport", 'A6:A56')
@@ -360,8 +409,6 @@ if __name__ == "__main__":
     med_income_dict = build_socioecon_dict(med_income_names, income_to_int(med_income), "Median Household Income")
     
     usda_ers_data = build_usda_ers_dict(pop_dict, poverty_dict, comp_hs_only_dict, comp_coll_dict, unemp_dict, med_income_dict)
-
-    write_to_json("USDA_ERS_Data.json", usda_ers_data)
 
     # getting michigan socioeconomic data
     mi_comp_coll_names = get_excel_data("socioeconomic_data/MIEducationReportCompColl.xlsx", "EducationReport", 'B5:B87')
@@ -418,9 +465,10 @@ if __name__ == "__main__":
 
     mi_usda_ers_data = build_usda_ers_dict(mi_pop_dict, mi_poverty_dict, mi_comp_hs_only_dict, mi_comp_coll_dict, mi_unemp_dict, mi_med_income_dict)
 
+    # writing data to json
+    write_to_json("USDA_ERS_Data.json", usda_ers_data)
     write_to_json("MI_USDA_ERS_Data.json", mi_usda_ers_data)
-
-    # write_to_json("US_Covid.json", npr_covid_data_dict())
+    write_to_json("US_Covid.json", npr_covid_data_dict())
 
     # print(f"\nHere are the datasets available for analysis.\n")
 
