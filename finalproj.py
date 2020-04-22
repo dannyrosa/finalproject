@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from openpyxl import load_workbook
 import requests
 import json
 import webbrowser
@@ -7,7 +8,7 @@ import sqlite3
 
 CACHE_FILENAME = "covid_cache.json"
 CACHE_DICT = {}
-DB_NAME = "covid_data.sqlite"
+DB_NAME = "covid_usdaers.sqlite"
 
 #########################################################
 ###                                                   ###
@@ -40,32 +41,14 @@ def build_county_url_dict():
 def launch_dataset_webpage(dataset):
     return webbrowser.open(dataset)
 
-###########################################################
-###                                                     ###
-### COLLECTING DATA FROM ONE SPECIFIC PAGE (POPULATION) ###
-### *** having trouble here                             ###
-###########################################################
-# pop_url = "https://data.ers.usda.gov/reports.aspx?ID=17829"
-# pop_response = requests.get(pop_url)
-# pop_soup = BeautifulSoup(pop_response.text, "html.parser")
-# print(pop_soup.prettify())
-
-
-
-# pop_data_table = pop_soup.find("a", title="Excel")
-# pop_data_table = pop_soup.find("table", class_="P89563b08bc53465683c0bb7d1b5395f0_1_r10")
-# print(f"\n\n\n\n")
-# print(pop_data_table)
-
-# for items in pop_data_table:
-#     print(f"\n\n\n\n\n{items}")
-
 #########################################################
 ###                                                   ###
 ### SCRAPING NPR CORONAVIRUS WEBPAGE                  ###
 ###                                                   ###
 #########################################################
-def npr_covid():
+def npr_covid_data_dict():
+    '''
+    '''
     npr_url = "https://apps.npr.org/dailygraphics/graphics/coronavirus-d3-us-map-20200312/table.html?initialWidth=1238&childId=responsive-embed-coronavirus-d3-us-map-20200312-table&parentTitle=Coronavirus%20Map%20And%20Graphics%3A%20Track%20The%20Spread%20In%20The%20U.S.%20%3A%20Shots%20-%20Health%20News%20%3A%20NPR&parentUrl=https%3A%2F%2Fwww.npr.org%2Fsections%2Fhealth-shots%2F2020%2F03%2F16%2F816707182%2Fmap-tracking-the-spread-of-the-coronavirus-in-the-u-s"
     npr_response = requests.get(npr_url)
     npr_soup = BeautifulSoup(npr_response.text, 'html.parser')
@@ -97,30 +80,67 @@ def npr_covid():
     
     return covid_nums
 
-### do i even need this?
-# def read_csv(filename):
-# data_header = []
-# data_rows = []
-# with open("us-counties.csv", 'r') as csvfile:
-#     data = []
-#     csv_header = csv.reader(csvfile)
-#     for h in csv_header:
-#         data.append(h)
-#     data_header.extend(data[0])
-#     data_rows.extend(data[1:])
+def build_usda_ers_dict(dict1, dict2, dict3, dict4, dict5, dict6):
 
-# print(f"HEADER: {data_header}")
-# print(f"ROWS: {data_rows}")
+    socioecon = {**dict1, **dict2, **dict3, **dict4, **dict5, **dict6}
+
+    for key, value in socioecon.items():
+        if key in dict1 and key in dict2 and key in dict3 and key in dict4 and key in dict5 and key in dict6:
+            socioecon[key] = [
+                value,
+                dict1[key],
+                dict2[key],
+                dict3[key],
+                dict4[key],
+                dict5[key]
+            ]
+    
+    socioecon2 = {}
+
+    for k, items in socioecon.items():
+        socioecon2[k] = {
+            'Population': items[1]['Population'],
+            'Median Household Income': items[0]['Median Household Income'],
+            'Poverty Rate': items[2]['Poverty Rate'],
+            'Unemployment Rate': items[5]['Unemployment Rate'],
+            "Completed HS Only Rate": items[3]["Completed HS Only Rate"],
+            "College Completion Rate": items[4]["College Completion Rate"],
+
+        }
+
+    return socioecon2
+
+def build_socioecon_dict(names, data, key):
+    socioecon = {}
+    for i in range(len(names)):
+        socioecon[names[i]] = {
+            key: data[i]
+        }
+    
+    return socioecon
+
+def get_excel_data(workbook, sheet, cellrange):
+    data = []
+
+    wb = load_workbook(workbook)
+    ws = wb[sheet]
+    rows = ws[cellrange]
+
+    for r in rows:
+        for cells in r:
+            data.append(cells.value)
+
+    return data
 
 def create_database():
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
 
-    drop_county_covid_sql = "DROP TABLE IF EXISTS 'County'"
-    drop_state_covid_sql = "DROP TABLE IF EXISTS 'State'"
+    drop_county_covid_sql = "DROP TABLE IF EXISTS 'CovidCounty'"
+    drop_state_covid_sql = "DROP TABLE IF EXISTS 'CovidState'"
 
     create_county_covid_sql = '''
-        CREATE TABLE IF NOT EXISTS "County" (
+        CREATE TABLE IF NOT EXISTS "CovidCounty" (
             "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
             "Date" TEXT NOT NULL,
             "County" TEXT NOT NULL,
@@ -132,7 +152,7 @@ def create_database():
     '''
 
     create_state_covid_sql = '''
-        CREATE TABLE IF NOT EXISTS "State" (
+        CREATE TABLE IF NOT EXISTS "CovidState" (
             "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
             "State" TEXT NOT NULL,
             "Cases" INTEGER NOT NULL,
@@ -144,14 +164,15 @@ def create_database():
     cur.execute(drop_state_covid_sql)
     cur.execute(create_county_covid_sql)
     cur.execute(create_state_covid_sql)
+
     conn.commit()
     conn.close()
 
-def load_county_covid():
+def load_covid_data():
     data_header = []
     data_rows = []
 
-    with open("us-counties.csv", 'r') as csvfile:
+    with open("covid_data/us-counties.csv", 'r') as csvfile:
         data = []
         csv_header = csv.reader(csvfile)
         for h in csv_header:
@@ -160,7 +181,7 @@ def load_county_covid():
         data_rows.extend(data[1:])
 
     insert_county_covid_sql = '''
-        INSERT INTO County
+        INSERT INTO CovidCounty
         VALUES (NULL, ?, ? , ?, ?, ?, ?)
     '''
 
@@ -168,7 +189,6 @@ def load_county_covid():
     cur = conn.cursor()
 
     for dr in data_rows:
-        # print(dr[5])
         cur.execute(insert_county_covid_sql, [
             dr[0],
             dr[1],
@@ -178,18 +198,10 @@ def load_county_covid():
             dr[5]
         ])
 
-    conn.commit()
-    conn.close()
-
-def load_state_covid():
-    
     insert_state_covid_sql = '''
-        INSERT INTO State
+        INSERT INTO CovidState
         Values (NULL, ?, ?, ?)
     '''
-
-    conn = sqlite3.connect(DB_NAME)
-    cur = conn.cursor()
 
     for k,v in npr_covid().items():
         cur.execute(insert_state_covid_sql, [
@@ -197,16 +209,35 @@ def load_state_covid():
             v['cases'],
             v['deaths']
         ])
-    
+
     conn.commit()
     conn.close()
 
 def clean_data(data):
-    try:
-        return int(data)
-    except:
-        data = data.replace(',','')
-        return int(data)
+    data = data.replace(',','')
+    return int(data)
+
+def income_to_int(values):
+    list_of_values = []
+
+    for v in values: 
+        v = v.replace("$",'')
+        v = v.replace(',','')
+        list_of_values.append(int(v))
+
+    return list_of_values
+
+def convert_to_percent(values):
+    list_of_values = []
+    
+    for v in values:
+        try:
+            percent = float('{0:.2f}'.format((v * 100)))
+            list_of_values.append(percent)
+        except:
+            list_of_values.append(v)
+    
+    return list_of_values
 
 def write_to_json(filename, data):
     with open(filename, "w") as file_obj:
@@ -283,8 +314,40 @@ if __name__ == "__main__":
     TEMP_LIST = []
 
     # create_database()
-    # load_county_covid()
-    # load_state_covid()
+    # load_covid_data()
+
+    # getting state socioeconomic data
+    comp_coll_names = get_excel_data("socioeconomic_data/EducationReportCompColl.xlsx", "EducationReport", 'A6:A56')
+    comp_coll_perc = get_excel_data("socioeconomic_data/EducationReportCompColl.xlsx", "EducationReport", 'F6:F56')
+
+    comp_hs_only_names = get_excel_data("socioeconomic_data/EducationReportHSOnly.xlsx", "EducationReport", 'A6:A56')
+    comp_hs_only = get_excel_data("socioeconomic_data/EducationReportHSOnly.xlsx", "EducationReport", 'F6:F56')
+
+    pop_names = get_excel_data("socioeconomic_data/PopulationReport.xlsx", "PopulationReport", 'A6:A56')
+    pop_num = get_excel_data("socioeconomic_data/PopulationReport.xlsx", "PopulationReport", 'E6:E56')
+
+    poverty_names = get_excel_data("socioeconomic_data/PovertyReportPercent.xlsx", "PovertyReport", 'A7:A57')
+    poverty_perc = get_excel_data("socioeconomic_data/PovertyReportPercent.xlsx", "PovertyReport", 'E7:E57')
+
+    unemp_names = get_excel_data("socioeconomic_data/UnemploymentReportPercent.xlsx", "UnemploymentReport", 'B4:B54')
+    unemp_perc = get_excel_data("socioeconomic_data/UnemploymentReportPercent.xlsx", "UnemploymentReport", 'K4:K54')
+
+    med_income_names = get_excel_data("socioeconomic_data/UnemploymentReportPercent.xlsx", "UnemploymentReport", 'B4:B54')
+    med_income = get_excel_data("socioeconomic_data/UnemploymentReportPercent.xlsx", "UnemploymentReport", 'L4:L54')
+
+    # building state socioeconomic dictionaries
+    comp_coll_dict = build_socioecon_dict(comp_coll_names, convert_to_percent(comp_coll_perc), "College Completion Rate")
+    comp_hs_only_dict = build_socioecon_dict(comp_hs_only_names, convert_to_percent(comp_hs_only), "Completed HS Only Rate")
+    poverty_dict = build_socioecon_dict(poverty_names, poverty_perc, "Poverty Rate")
+    pop_dict = build_socioecon_dict(pop_names, pop_num, "Population")
+    unemp_dict = build_socioecon_dict(unemp_names, unemp_perc, "Unemployment Rate")
+    med_income_dict = build_socioecon_dict(med_income_names, income_to_int(med_income), "Median Household Income")
+    
+    usda_ers_data = build_usda_ers_dict(pop_dict, poverty_dict, comp_hs_only_dict, comp_coll_dict,unemp_dict, med_income_dict)
+
+    write_to_json("USDA_ERS_Data.json", usda_ers_data)
+
+    # write_to_json("US_Covid.json", npr_covid_data_dict())
 
     # print(f"\nHere are the datasets available for analysis.\n")
 
@@ -293,8 +356,6 @@ if __name__ == "__main__":
     #     print(f"[{counter}] {k}")
     #     TEMP_LIST.append(v)
     #     counter += 1
-    
-    # write_to_json("US_Covid.json", npr_covid())
 
     # while True:
         # webpage = input(f"\nChoose a number to launch the webpage for the respective dataset or 'exit':\n")
