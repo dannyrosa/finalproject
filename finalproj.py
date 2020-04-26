@@ -1,5 +1,8 @@
 from bs4 import BeautifulSoup
 from openpyxl import load_workbook
+import plotly.graph_objs as go
+# from plotly.subplots import make_subplots
+import plotly.figure_factory as ff
 import requests
 import json
 import webbrowser
@@ -10,11 +13,6 @@ CACHE_FILENAME = "covid_cache.json"
 CACHE_DICT = {}
 DB_NAME = "covid_usdaers.sqlite"
 
-#########################################################
-###                                                   ###
-### CREATING DICTIONARY W/ 4 KEY:VALUE PAIRS FOR DATA ###
-###                                                   ###
-#########################################################
 def build_county_url_dict():
     url = "https://www.ers.usda.gov/data-products/county-level-data-sets/"
     response = requests.get(url)
@@ -41,19 +39,12 @@ def build_county_url_dict():
 def launch_dataset_webpage(dataset):
     return webbrowser.open(dataset)
 
-#########################################################
-###                                                   ###
-### SCRAPING NPR CORONAVIRUS WEBPAGE                  ###
-###                                                   ###
-#########################################################
 def npr_covid_data_dict():
     '''
     '''
     npr_url = "https://apps.npr.org/dailygraphics/graphics/coronavirus-d3-us-map-20200312/table.html?initialWidth=1238&childId=responsive-embed-coronavirus-d3-us-map-20200312-table&parentTitle=Coronavirus%20Map%20And%20Graphics%3A%20Track%20The%20Spread%20In%20The%20U.S.%20%3A%20Shots%20-%20Health%20News%20%3A%20NPR&parentUrl=https%3A%2F%2Fwww.npr.org%2Fsections%2Fhealth-shots%2F2020%2F03%2F16%2F816707182%2Fmap-tracking-the-spread-of-the-coronavirus-in-the-u-s"
     npr_response = requests.get(npr_url)
     npr_soup = BeautifulSoup(npr_response.text, 'html.parser')
-
-    # make_request_with_cache(npr_url, npr_soup.prettify())
 
     covid_nums = {}
 
@@ -74,8 +65,8 @@ def npr_covid_data_dict():
 
     for i in range(len(names_list)):
             covid_nums[names_list[i]] = {
-                    'cases': cases_list[i],
-                    'deaths': deaths_list[i]
+                    'Cases': cases_list[i],
+                    'Deaths': deaths_list[i]
                 }
     
     return covid_nums
@@ -146,32 +137,32 @@ def create_database():
             "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
             "Date" TEXT NOT NULL,
             "County" TEXT NOT NULL,
-            "State" TEXT NOT NULL,
+            "StateName" TEXT NOT NULL,
             "Fips" INTEGER NOT NULL,
-            "Cases" INTEGER,
-            "Deaths" INTEGER
+            "CountyCases" INTEGER,
+            "CountyDeaths" INTEGER
         )
     '''
 
     create_state_covid_sql = '''
         CREATE TABLE IF NOT EXISTS "CovidState" (
             "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
-            "State" TEXT NOT NULL,
-            "Cases" INTEGER NOT NULL,
-            "Deaths" INTEGER NOT NULL
+            "Name" TEXT NOT NULL,
+            "StateCases" INTEGER NOT NULL,
+            "StateDeaths" INTEGER NOT NULL
         )
     '''
 
     create_states_usda_sql = '''
         CREATE TABLE IF NOT EXISTS "SocioeconomicStates" (
             "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
-            "State" TEXT NOT NULL,
-            "Population" INTEGER NOT NULL,
-            "MedianIncome" INTEGER NOT NULL,
-            "PovertyRate" DECIMAL NOT NULL,
-            "UnemploymentRate" DECIMAL NOT NULL,
-            "CompHSOnlyRate" DECIMAL NOT NULL,
-            "CompCollRate" DECIMAL NOT NULL
+            "StateName" TEXT NOT NULL,
+            "StatePopulation" INTEGER NOT NULL,
+            "StateMedianIncome" INTEGER NOT NULL,
+            "StatePovertyRate" DECIMAL NOT NULL,
+            "StateUnemploymentRate" DECIMAL NOT NULL,
+            "StateCompHSOnlyRate" DECIMAL NOT NULL,
+            "StateCompCollRate" DECIMAL NOT NULL
         )
     '''
 
@@ -179,12 +170,12 @@ def create_database():
     CREATE TABLE IF NOT EXISTS "SocioeconomicMichigan" (
             "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
             "County" TEXT NOT NULL,
-            "Population" INTEGER NOT NULL,
-            "MedianIncome" INTEGER NOT NULL,
-            "PovertyRate" DECIMAL NOT NULL,
-            "UnemploymentRate" DECIMAL NOT NULL,
-            "CompHSOnlyRate" DECIMAL NOT NULL,
-            "CompCollRate" DECIMAL NOT NULL
+            "CountyPopulation" INTEGER NOT NULL,
+            "CountyMedianIncome" INTEGER NOT NULL,
+            "CountyPovertyRate" DECIMAL NOT NULL,
+            "CountyUnemploymentRate" DECIMAL NOT NULL,
+            "CountyCompHSOnlyRate" DECIMAL NOT NULL,
+            "CountyCompCollRate" DECIMAL NOT NULL
         )
     '''
 
@@ -200,9 +191,12 @@ def create_database():
     conn.commit()
     conn.close()
 
-def load_covid_data():
+def populate_database():
     data_header = []
     data_rows = []
+
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
 
     with open("covid_data/us-counties.csv", 'r') as csvfile:
         data = []
@@ -216,9 +210,6 @@ def load_covid_data():
         INSERT INTO CovidCounty
         VALUES (NULL, ?, ? , ?, ?, ?, ?)
     '''
-
-    conn = sqlite3.connect(DB_NAME)
-    cur = conn.cursor()
 
     for dr in data_rows:
         cur.execute(insert_county_covid_sql, [
@@ -238,8 +229,8 @@ def load_covid_data():
     for k,v in npr_covid_data_dict().items():
         cur.execute(insert_state_covid_sql, [
             k,
-            v['cases'],
-            v['deaths']
+            v['Cases'],
+            v['Deaths']
         ])
     
     insert_state_ers_sql = '''
@@ -277,6 +268,39 @@ def load_covid_data():
 
     conn.commit()
     conn.close()
+
+def clean_county_covid_data():
+    data_header = []
+    data_rows = []
+    county_dict = {}
+
+    with open("covid_data/us-counties.csv", 'r') as csvfile:
+        data = []
+        csv_header = csv.reader(csvfile)
+        for h in csv_header:
+            data.append(h)
+        data_header.extend(data[0])
+        data_rows.extend(data[1:])
+
+    for dr in data_rows:
+        if dr[2] not in county_dict:
+            county_dict[dr[2]] = {
+                dr[1]: {
+                    "Cases": int(dr[4]),
+                    "Deaths": int(dr[5])
+                }
+            }
+        elif dr[2] in county_dict:
+            county_dict[dr[2]].update(
+            {
+                dr[1]: {
+                    "Cases": int(dr[4]),
+                    "Deaths": int(dr[5])
+                }
+            }
+            )
+
+    return county_dict
 
 def clean_data(data):
     data = data.replace(',','')
@@ -374,13 +398,7 @@ def make_request_with_cache(cache_key, cache_value):
         save_cache(CACHE_DICT)
         return CACHE_DICT[cache_key]
 
-if __name__ == "__main__":
-    CACHE_DICT = open_cache()
-    TEMP_LIST = []
-
-    create_database()
-    load_covid_data()
-
+def clean_excel_data():
     # getting state socioeconomic data
     comp_coll_names = get_excel_data("socioeconomic_data/EducationReportCompColl.xlsx", "EducationReport", 'A6:A56')
     comp_coll_perc = get_excel_data("socioeconomic_data/EducationReportCompColl.xlsx", "EducationReport", 'F6:F56')
@@ -468,7 +486,99 @@ if __name__ == "__main__":
     # writing data to json
     write_to_json("USDA_ERS_Data.json", usda_ers_data)
     write_to_json("MI_USDA_ERS_Data.json", mi_usda_ers_data)
-    write_to_json("US_Covid.json", npr_covid_data_dict())
+
+def access_state_sql_database(state):
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+    query = f'''
+        SELECT StateName, County, MAX(CountyCases), MAX(CountyDeaths)
+        FROM CovidCounty
+        WHERE StateName = "{state}"
+        GROUP BY County
+        ORDER BY MAX(CountyCases) DESC
+    '''
+    result = cur.execute(query).fetchall()
+    conn.close()
+    return result
+
+def access_national_sql_database():
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+    query = '''
+        SELECT Name, MAX(StateCases), MAX(StateDeaths), ss.StatePopulation, ss.StateMedianIncome, ss.StateUnemploymentRate, ss.StatePovertyRate, ss.StateCompCollRate, ss.StateCompHSOnlyRate
+        FROM CovidState
+            JOIN SocioeconomicStates as ss
+            ON CovidState.Name = ss.StateName
+        GROUP BY Name
+        ORDER BY MAX(StateCases) DESC
+    '''
+    result = cur.execute(query).fetchall()
+    conn.close()
+    return result
+
+def create_and_show_figures(user_input):
+    if user_input == "nation":
+        state_names = []
+        state_cases = []
+        state_deaths = []
+        table_data = [["State", "Cases", "Deaths", "Population", "Median Income", "Unemployment Rate", "Poverty Rate", "College Completion Rate", "Completed High School Only Rate"]]
+        for data in access_national_sql_database():
+            table_data.append([data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8]])
+            state_names.append(data[0])
+            state_cases.append(data[1])
+            state_deaths.append(data[2])
+        
+        trace1 = go.Bar(name="Cases", x=state_names[1:], y=state_cases[1:], xaxis="x2", yaxis="y2")
+        trace2 = go.Bar(name="Deaths", x=state_names[1:], y=state_deaths[1:], xaxis="x2", yaxis="y2")
+    else:
+        county_names = []
+        county_cases = []
+        county_deaths = []
+        table_data = [['County', 'Cases', 'Deaths']]
+        for data in access_state_sql_database(user_input.title()):
+            table_data.append([data[1], data[2], data[3]])
+            county_names.append(data[1])
+            county_cases.append(data[2])
+            county_deaths.append(data[3])
+
+        trace1 = go.Bar(name="Cases", x=county_names, y=county_cases, xaxis="x2", yaxis="y2")
+        trace2 = go.Bar(name="Deaths", x=county_names, y=county_deaths, xaxis="x2", yaxis="y2")
+    
+    table = ff.create_table(table_data)
+
+    table.add_traces([trace1, trace2])
+
+    table["layout"]["xaxis2"] = {}
+    table["layout"]["yaxis2"] = {}
+
+    table.layout.yaxis.update({"domain":[0, .45]})
+    table.layout.yaxis2.update({"domain":[.6, 1]})
+
+    table.layout.yaxis2.update({"anchor":"x2"})
+    table.layout.xaxis2.update({"anchor":"y2"})
+    table.layout.yaxis2.update({"title":"COVID-19"})
+
+    table.layout.margin.update({"t":75, "l":50})
+    table.layout.update({"title":"2020 COVID-19 Numbers"})
+
+    table.show()
+
+if __name__ == "__main__":
+    CACHE_DICT = open_cache()
+    TEMP_LIST = []
+
+    while True:
+        data_to_view = input(f"\nYou can see COVID-19 data for the entire nation or a specific state. Enter 'nation', a state (including 'District of Columbia'), or 'exit':\n")
+        if data_to_view == "exit":
+            exit()
+        else:
+            create_and_show_figures(data_to_view)
+
+    # clean_excel_data
+    # create_database()
+    # populate_database()
+    # write_to_json("US_Covid.json", npr_covid_data_dict())
+    # write_to_json("County_Covid.json", clean_county_covid_data())
 
     # print(f"\nHere are the datasets available for analysis.\n")
 
