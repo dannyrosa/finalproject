@@ -521,15 +521,28 @@ def create_and_show_figures(user_input):
         state_names = []
         state_cases = []
         state_deaths = []
+        # state_pop = []
+        # state_med_income = []
+        # state_unemp = []
+        # state_pov = []
+        # state_coll_comp = []
+        # state_comp_hs = []
+        # table_data = []
         table_data = [["State", "Cases", "Deaths", "Population", "Median Income", "Unemployment Rate", "Poverty Rate", "College Completion Rate", "Completed High School Only Rate"]]
         for data in access_national_sql_database():
             table_data.append([data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8]])
             state_names.append(data[0])
             state_cases.append(data[1])
             state_deaths.append(data[2])
+            # state_pop.append(data[3])
+            # state_med_income.append(data[4])
+            # state_unemp.append(data[5])
+            # state_pov.append(data[6])
+            # state_coll_comp.append(data[7])
+            # state_comp_hs.append(data[8])
         
-        trace1 = go.Bar(name="Cases", x=state_names[1:], y=state_cases[1:], xaxis="x2", yaxis="y2")
-        trace2 = go.Bar(name="Deaths", x=state_names[1:], y=state_deaths[1:], xaxis="x2", yaxis="y2")
+        trace1 = go.Bar(name="Cases", x=state_names, y=state_cases, xaxis="x2", yaxis="y2")
+        trace2 = go.Bar(name="Deaths", x=state_names, y=state_deaths, xaxis="x2", yaxis="y2")
     else:
         county_names = []
         county_cases = []
@@ -545,6 +558,11 @@ def create_and_show_figures(user_input):
         trace2 = go.Bar(name="Deaths", x=county_names, y=county_deaths, xaxis="x2", yaxis="y2")
     
     table = ff.create_table(table_data)
+
+    # table_headers = ["State", "Cases", "Deaths", "Population", "Median Income", "Unemployment Rate", "Poverty Rate", "College Completion Rate", "Completed High School Only Rate"]
+    # table = go.Table(
+    #     header=dict(values=table_headers),
+    #     cells=dict(values=[state_names, state_cases, state_deaths, state_pop, state_med_income, state_unemp, state_pov, state_coll_comp, state_comp_hs]))
 
     table.add_traces([trace1, trace2])
 
