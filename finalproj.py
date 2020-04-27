@@ -8,6 +8,7 @@ import json
 import webbrowser
 import csv
 import sqlite3
+import time
 
 CACHE_FILENAME = "covid_cache.json"
 CACHE_DICT = {}
@@ -547,6 +548,7 @@ def create_and_show_figures(user_input):
         county_names = []
         county_cases = []
         county_deaths = []
+        state_socio = []
         table_data = [['County', 'Cases', 'Deaths']]
         for data in access_state_sql_database(user_input.title()):
             table_data.append([data[1], data[2], data[3]])
@@ -554,15 +556,28 @@ def create_and_show_figures(user_input):
             county_cases.append(data[2])
             county_deaths.append(data[3])
 
+        for national_data in access_national_sql_database():
+            if national_data[0] == user_input.title():
+                state_socio.extend([national_data[0], national_data[3], national_data[4], national_data[5], national_data[6], national_data[7], national_data[8]])
+
+        print(f"Here is socioeconomic data for {user_input.title()}:")
+        time.sleep(1)
+        print(f"Population: {state_socio[1]}")
+        time.sleep(1)
+        print(f"Median Household Income: {state_socio[2]}")
+        time.sleep(1)
+        print(f"Unemployment Rate: {state_socio[3]}")
+        time.sleep(1)
+        print(f"Poverty Rate: {state_socio[4]}")
+        time.sleep(1)
+        print(f"College Completion Rate: {state_socio[5]}")
+        time.sleep(1)
+        print(f"Completed High School Only Rate: {state_socio[6]}")
+
         trace1 = go.Bar(name="Cases", x=county_names, y=county_cases, xaxis="x2", yaxis="y2")
         trace2 = go.Bar(name="Deaths", x=county_names, y=county_deaths, xaxis="x2", yaxis="y2")
     
     table = ff.create_table(table_data)
-
-    # table_headers = ["State", "Cases", "Deaths", "Population", "Median Income", "Unemployment Rate", "Poverty Rate", "College Completion Rate", "Completed High School Only Rate"]
-    # table = go.Table(
-    #     header=dict(values=table_headers),
-    #     cells=dict(values=[state_names, state_cases, state_deaths, state_pop, state_med_income, state_unemp, state_pov, state_coll_comp, state_comp_hs]))
 
     table.add_traces([trace1, trace2])
 
@@ -577,8 +592,13 @@ def create_and_show_figures(user_input):
     table.layout.yaxis2.update({"title":"COVID-19"})
 
     table.layout.margin.update({"t":75, "l":50})
-    table.layout.update({"title":"2020 COVID-19 Numbers"})
 
+    if user_input == "nation":
+        table.layout.update({"title":"National 2020 COVID-19 Numbers"})
+    else:
+        table.layout.update({"title":f"{user_input.title()} 2020 COVID-19 Numbers"})
+
+    time.sleep(3)
     table.show()
 
 if __name__ == "__main__":
