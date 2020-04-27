@@ -732,7 +732,7 @@ def create_and_show_figures(user_input):
 
         print(f"\nHere is socioeconomic data for {user_input}:")
         time.sleep(1)
-        print(f"Population: {state_socio[1]}")
+        print(f"\nPopulation: {state_socio[1]}")
         time.sleep(1)
         print(f"Median Household Income: {state_socio[2]}")
         time.sleep(1)
@@ -768,6 +768,7 @@ def create_and_show_figures(user_input):
     else:
         table.layout.update({"title":f"{user_input} 2020 COVID-19 Numbers"})
 
+    print("\nThe visuals will now launch in your browswer.")
     time.sleep(2)
     table.show()
 
@@ -845,19 +846,17 @@ if __name__ == "__main__":
     URL_LIST = []
 
     # clean_excel_data
-    create_database()
-    populate_database()
-    write_to_json("US_Covid.json", npr_covid_data_dict())
-    write_to_json("County_Covid.json", clean_county_covid_data())
+    # create_database()
+    # populate_database()
+    # write_to_json("US_Covid.json", npr_covid_data_dict())
+    # write_to_json("County_Covid.json", clean_county_covid_data())
 
     welcome_message = '''
     Welcome!\n
     This interactive program combines USDA Economic Research Service (USDA ERS) and COVID-19 data.\n
     You will be able to see both state- and county-level COVID-19 data.\n
-    State-level COVID-19 data comes from scraping NPR's COVID-19 tracking webpage.\n
-    The webpage is updated periodically and a timestamp is provided.\n
-    County-level COVID-19 data comes from the New York Times' GitHub repository.\n
-    This data was downloaded as a CSV file on April 27th, with numbers current as of April 26th.\n
+    State-level COVID-19 data comes from scraping NPR's COVID-19 tracking webpage. The webpage is updated periodically and a timestamp is provided.\n
+    County-level COVID-19 data comes from the New York Times' GitHub repository. This data was downloaded as a CSV file on April 27th, with numbers current as of April 26th.\n
     If you choose to see COVID-19 data for a specific state, then you will also be able to see a number of socioeconomic data harvested from USDA ERS data about that specific state.\n
     The socioeconomic data are:\n
     - Population\n
@@ -866,16 +865,15 @@ if __name__ == "__main__":
     - Poverty Rate\n
     - College Completion Rate\n
     - High School Only Completion Rate\n
-    Both national and state COVID-19 data will be presented in bar and table form if you like.\n
-    If you select a state, the socioeconomic data will print to your terminal and the COVID-19 data will launch in your browser.\n
+    Both national and state COVID-19 data will be presented in bar and table form if you like. If you select a state, the socioeconomic data will print to your terminal and the COVID-19 data will launch in your browser.\n
     '''
 
     for wm in welcome_message.split("\n"):
         if wm != '':
-            print(wm.strip())
-            time.sleep(2.5)
+            print(wm)
+            time.sleep(3)
     
-    print("First, let's begin with the USDA ERS data. Here are the data sets being used:")
+    print("First, let's begin with the USDA ERS data. Here are the data sets being used:\n")
     time.sleep(2.5)
 
     change = True
@@ -927,7 +925,7 @@ if __name__ == "__main__":
                         
                         elif visuals.lower() == "yes":
                             i = 0
-                            print("The visuals will now launch in your browser.")
+                            # print("The visuals will now launch in your browser.")
                             create_and_show_figures(covid_data.lower())
                             while i == 0:
                                 user_input = input("\nEnter 'back' for the previous prompt or 'exit' to leave the program.\n")
@@ -970,9 +968,10 @@ if __name__ == "__main__":
                                 STATE_INPUT_NUM = int(state_data)
                                 
                                 if 1 < STATE_INPUT_NUM <= 51:
-                                    time.sleep(.5)
+                                    time.sleep(1)
                                     for i in range(len(STATES)):
                                         print(f"\nHere is the data for {STATES[STATE_INPUT_NUM - 1]}. It is accurate as of April 26th.\n")
+                                        time.sleep(1)
                                         for data in access_state_sql_database(STATES[STATE_INPUT_NUM - 1]):
                                             print(f"{data[1]}: Cases - {data[2]} | Deaths - {data[3]}")
                                             time.sleep(.5)
@@ -987,8 +986,9 @@ if __name__ == "__main__":
                                     exit()
 
                                 elif visuals.lower() == "yes":
+                                    time.sleep(1)
                                     create_and_show_figures(STATES[STATE_INPUT_NUM - 1])
-                                    print("\nThe visuals will now launch in your browser.")
+                                    # print("\nThe visuals will now launch in your browser.")
                                     state_input = input("\nEnter 'back' to see COVID-19 data for another state or 'exit' to leave the program.\n")
                                     
                                     if state_input.lower() == "exit":
