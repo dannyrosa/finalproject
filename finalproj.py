@@ -731,17 +731,17 @@ def create_and_show_figures(user_input):
                 state_socio.extend([national_data[0], national_data[3], national_data[4], national_data[5], national_data[6], national_data[7], national_data[8]])
 
         print(f"\nHere is socioeconomic data for {user_input}:")
-        # time.sleep(1)
+        time.sleep(1)
         print(f"Population: {state_socio[1]}")
-        # time.sleep(1)
+        time.sleep(1)
         print(f"Median Household Income: {state_socio[2]}")
-        # time.sleep(1)
+        time.sleep(1)
         print(f"Unemployment Rate: {state_socio[3]}")
-        # time.sleep(1)
+        time.sleep(1)
         print(f"Poverty Rate: {state_socio[4]}")
-        # time.sleep(1)
+        time.sleep(1)
         print(f"College Completion Rate: {state_socio[5]}")
-        # time.sleep(1)
+        time.sleep(1)
         print(f"Completed High School Only Rate: {state_socio[6]}")
 
         trace1 = go.Bar(name="Cases", x=county_names, y=county_cases, xaxis="x2", yaxis="y2")
@@ -970,8 +970,9 @@ if __name__ == "__main__":
                                 STATE_INPUT_NUM = int(state_data)
                                 
                                 if 1 < STATE_INPUT_NUM <= 51:
+                                    time.sleep(.5)
                                     for i in range(len(STATES)):
-                                        print(f"\nHere is the data for {STATES[STATE_INPUT_NUM - 1]}. It is accurate as of April 26.\n")
+                                        print(f"\nHere is the data for {STATES[STATE_INPUT_NUM - 1]}. It is accurate as of April 26th.\n")
                                         for data in access_state_sql_database(STATES[STATE_INPUT_NUM - 1]):
                                             print(f"{data[1]}: Cases - {data[2]} | Deaths - {data[3]}")
                                             time.sleep(.5)
@@ -986,8 +987,8 @@ if __name__ == "__main__":
                                     exit()
 
                                 elif visuals.lower() == "yes":
-                                    print("The visuals will now launch in your browser.")
                                     create_and_show_figures(STATES[STATE_INPUT_NUM - 1])
+                                    print("\nThe visuals will now launch in your browser.")
                                     state_input = input("\nEnter 'back' to see COVID-19 data for another state or 'exit' to leave the program.\n")
                                     
                                     if state_input.lower() == "exit":
