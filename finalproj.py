@@ -8,13 +8,15 @@ import webbrowser
 import csv
 import sqlite3
 import time
-import sys
 
 CACHE_FILENAME = "covid_cache.json"
 CACHE_DICT = {}
 DB_NAME = "covid_usdaers.sqlite"
 
 def build_county_url_dict():
+    '''
+    '''
+
     url = "https://www.ers.usda.gov/data-products/county-level-data-sets/"
     response = requests.get(url)
     soup = BeautifulSoup(response.text, "html.parser")
@@ -38,11 +40,15 @@ def build_county_url_dict():
     return data_dict
 
 def launch_dataset_webpage(dataset):
+    '''
+    '''
+
     return webbrowser.open(dataset)
 
 def npr_covid_data_dict():
     '''
     '''
+
     npr_url = "https://apps.npr.org/dailygraphics/graphics/coronavirus-d3-us-map-20200312/table.html?initialWidth=1238&childId=responsive-embed-coronavirus-d3-us-map-20200312-table&parentTitle=Coronavirus%20Map%20And%20Graphics%3A%20Track%20The%20Spread%20In%20The%20U.S.%20%3A%20Shots%20-%20Health%20News%20%3A%20NPR&parentUrl=https%3A%2F%2Fwww.npr.org%2Fsections%2Fhealth-shots%2F2020%2F03%2F16%2F816707182%2Fmap-tracking-the-spread-of-the-coronavirus-in-the-u-s"
     npr_response = requests.get(npr_url)
     npr_soup = BeautifulSoup(npr_response.text, 'html.parser')
@@ -75,6 +81,7 @@ def npr_covid_data_dict():
 def npr_covid_data_time_pulled():
     '''
     '''
+
     npr_url = "https://apps.npr.org/dailygraphics/graphics/coronavirus-d3-us-map-20200312/table.html?initialWidth=1238&childId=responsive-embed-coronavirus-d3-us-map-20200312-table&parentTitle=Coronavirus%20Map%20And%20Graphics%3A%20Track%20The%20Spread%20In%20The%20U.S.%20%3A%20Shots%20-%20Health%20News%20%3A%20NPR&parentUrl=https%3A%2F%2Fwww.npr.org%2Fsections%2Fhealth-shots%2F2020%2F03%2F16%2F816707182%2Fmap-tracking-the-spread-of-the-coronavirus-in-the-u-s"
     npr_response = requests.get(npr_url)
     npr_soup = BeautifulSoup(npr_response.text, 'html.parser')
@@ -87,6 +94,8 @@ def npr_covid_data_time_pulled():
     return time[0]
 
 def build_usda_ers_dict(dict1, dict2, dict3, dict4, dict5, dict6):
+    '''
+    '''
 
     socioecon = {**dict1, **dict2, **dict3, **dict4, **dict5, **dict6}
 
@@ -117,6 +126,9 @@ def build_usda_ers_dict(dict1, dict2, dict3, dict4, dict5, dict6):
     return socioecon2
 
 def build_socioecon_dict(names, data, key):
+    '''
+    '''
+
     socioecon = {}
     for i in range(len(names)):
         socioecon[names[i]] = {
@@ -126,6 +138,9 @@ def build_socioecon_dict(names, data, key):
     return socioecon
 
 def get_excel_data(workbook, sheet, cellrange):
+    '''
+    '''
+
     data = []
 
     wb = load_workbook(workbook)
@@ -139,6 +154,9 @@ def get_excel_data(workbook, sheet, cellrange):
     return data
 
 def create_database():
+    '''
+    '''
+
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
 
@@ -207,6 +225,9 @@ def create_database():
     conn.close()
 
 def populate_database():
+    '''
+    '''
+
     data_header = []
     data_rows = []
 
@@ -285,6 +306,9 @@ def populate_database():
     conn.close()
 
 def clean_county_covid_data():
+    '''
+    '''
+
     data_header = []
     data_rows = []
     county_dict = {}
@@ -318,10 +342,16 @@ def clean_county_covid_data():
     return county_dict
 
 def clean_nums(data):
+    '''
+    '''
+
     data = data.replace(',','')
     return int(data)
 
 def income_to_int(values):
+    '''
+    '''
+
     list_of_values = []
 
     for v in values: 
@@ -332,6 +362,9 @@ def income_to_int(values):
     return list_of_values
 
 def convert_to_percent(values):
+    '''
+    '''
+
     list_of_values = []
     
     for v in values:
@@ -344,10 +377,16 @@ def convert_to_percent(values):
     return list_of_values
 
 def write_to_json(filename, data):
+    '''
+    '''
+
     with open(filename, "w") as file_obj:
         json.dump(data, file_obj, indent=4)
 
 def clean_excel_data():
+    '''
+    '''
+
     # getting state socioeconomic data
     comp_coll_names = get_excel_data("socioeconomic_data/EducationReportCompColl.xlsx", "EducationReport", 'A6:A56')
     comp_coll_perc = get_excel_data("socioeconomic_data/EducationReportCompColl.xlsx", "EducationReport", 'F6:F56')
@@ -437,6 +476,9 @@ def clean_excel_data():
     write_to_json("MI_USDA_ERS_Data.json", mi_usda_ers_data)
 
 def access_state_sql_database(state):
+    '''
+    '''
+
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     query = f'''
@@ -451,6 +493,9 @@ def access_state_sql_database(state):
     return result
 
 def access_national_sql_database():
+    '''
+    '''
+
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     query = '''
@@ -466,6 +511,9 @@ def access_national_sql_database():
     return result
 
 def create_and_show_figures(user_input):
+    '''
+    '''
+
     if user_input == "nation":
         state_names = []
         state_cases = []
@@ -498,28 +546,28 @@ def create_and_show_figures(user_input):
         county_deaths = []
         state_socio = []
         table_data = [['County', 'Cases', 'Deaths']]
-        for data in access_state_sql_database(user_input.title()):
+        for data in access_state_sql_database(user_input):
             table_data.append([data[1], data[2], data[3]])
             county_names.append(data[1])
             county_cases.append(data[2])
             county_deaths.append(data[3])
 
         for national_data in access_national_sql_database():
-            if national_data[0] == user_input.title():
+            if national_data[0] == user_input:
                 state_socio.extend([national_data[0], national_data[3], national_data[4], national_data[5], national_data[6], national_data[7], national_data[8]])
 
-        print(f"Here is socioeconomic data for {user_input.title()}:")
-        time.sleep(1)
+        print(f"\nHere is socioeconomic data for {user_input}:")
+        # time.sleep(1)
         print(f"Population: {state_socio[1]}")
-        time.sleep(1)
+        # time.sleep(1)
         print(f"Median Household Income: {state_socio[2]}")
-        time.sleep(1)
+        # time.sleep(1)
         print(f"Unemployment Rate: {state_socio[3]}")
-        time.sleep(1)
+        # time.sleep(1)
         print(f"Poverty Rate: {state_socio[4]}")
-        time.sleep(1)
+        # time.sleep(1)
         print(f"College Completion Rate: {state_socio[5]}")
-        time.sleep(1)
+        # time.sleep(1)
         print(f"Completed High School Only Rate: {state_socio[6]}")
 
         trace1 = go.Bar(name="Cases", x=county_names, y=county_cases, xaxis="x2", yaxis="y2")
@@ -544,7 +592,7 @@ def create_and_show_figures(user_input):
     if user_input == "nation":
         table.layout.update({"title":"National 2020 COVID-19 Numbers"})
     else:
-        table.layout.update({"title":f"{user_input.title()} 2020 COVID-19 Numbers"})
+        table.layout.update({"title":f"{user_input} 2020 COVID-19 Numbers"})
 
     time.sleep(3)
     table.show()
@@ -627,10 +675,8 @@ if __name__ == "__main__":
     # write_to_json("US_Covid.json", npr_covid_data_dict())
     # write_to_json("County_Covid.json", clean_county_covid_data())
 
-    print("\nWelcome!\n")
-    # time.sleep(1)
-
     welcome_message = '''
+    Welcome!\n
     This interactive program combines USDA Economic Research Service (USDA ERS) and COVID-19 data.\n
     You will be able to see both national and state-level COVID-19 data.\n
     If you choose to see COVID-19 data for a specific state, then you will also be able to see a number of socioeconomic data harvested from USDA ERS data about that specific state.\n
@@ -648,10 +694,10 @@ if __name__ == "__main__":
     for wm in welcome_message.split("\n"):
         if wm != '':
             print(wm.strip())
-            # time.sleep(3)
+            # time.sleep(2.5)
     
-    print("First, let's begin with the USDA ERS data. Here are the data sets being used.\n")
-    # time.sleep(3)
+    print("First, let's begin with the USDA ERS data. Here are the data sets being used:")
+    # time.sleep(2.5)
 
     change = True
     while True:
@@ -661,7 +707,7 @@ if __name__ == "__main__":
                 print(f"[{counter}] {k}")
                 TEMP_LIST.append(v)
                 counter += 1
-                # time.sleep(2)
+                # time.sleep(.5)
 
             webpage = input(f"\nChoose a number to launch the webpage for the respective dataset, 'next' to see COVID-19 data, or 'exit' to leave this program:\n")
 
@@ -676,8 +722,8 @@ if __name__ == "__main__":
 
             elif webpage == "next":
                 switch = True
-                # while True:
                 while switch is True:
+                    # time.sleep(1)
                     covid_data = input("\nYou can see COVID-19 data for the entire nation or a specific state. Enter 'nation', 'state', 'back' to go back and view USDA ERS data, or 'exit'.\n")
 
                     if covid_data.lower() == "exit":
@@ -688,20 +734,21 @@ if __name__ == "__main__":
                         change = True
 
                     elif covid_data.lower() == "nation":
-                        # switch = False
                         print(f"\nThis data is accurate as of {npr_covid_data_time_pulled()}.\n")
                         for k,v in npr_covid_data_dict().items():
-                            print(f"{k}: Cases - {v['Cases']} | Deaths - {v['Deaths']}")
+                            if k in STATES:
+                                print(f"{k}: Cases - {v['Cases']} | Deaths - {v['Deaths']}")
+                                # time.sleep(.5)
                         
                         print()
 
-                        # while turn is True:
-                        visuals = input("NATION This data can be presented visually. The COVID-19 data will be presented in both bar graph and table form. The socioeconimc data will be presented in table form only. Would you like to see it? Enter 'yes', 'back', or 'exit'.\n")
+                        visuals = input("This data can be presented visually. The COVID-19 data will be presented in both bar graph and table form. The socioeconimc data will be presented in table form only. Would you like to see it? Enter 'yes', 'back', or 'exit'.\n")
                         if visuals == "exit":
                             exit()
                         elif visuals == "yes":
+                            print("The visuals will now launch in your browser.")
                             create_and_show_figures(covid_data.lower())
-                            something_input = input("Enter 'back' for the previous prompt or 'exit' to leave the program.\n")
+                            something_input = input("\nEnter 'back' for the previous prompt or 'exit' to leave the program.\n")
                             if something_input == "exit":
                                 exit()
                             elif something_input == "back":
@@ -716,6 +763,9 @@ if __name__ == "__main__":
                             for s in STATES:
                                 print(f"[{counter}] {s}")
                                 counter += 1
+                                # time.sleep(.1)
+                            
+                            print()
                             
                             state_data = input(f"Choose a number to see COVID-19 for a specific state (by county), 'back', or 'exit' to leave this program.\n")
 
@@ -730,21 +780,29 @@ if __name__ == "__main__":
                                 STATE_INPUT_NUM = int(state_data)
                                 if 0 < STATE_INPUT_NUM < 52:
                                     for i in range(len(STATES)):
-                                        print(f"Here is the data for {STATES[STATE_INPUT_NUM - 1]}")
+                                        print(f"\nHere is the data for {STATES[STATE_INPUT_NUM - 1]}\n")
                                         for data in access_state_sql_database(STATES[STATE_INPUT_NUM - 1]):
                                             print(f"{data[1]}: Cases - {data[2]} | Deaths - {data[3]}")
+                                            # time.sleep(.5)
+                                        
+                                        print()
                                         break
                             
                                 visuals = input("This data can be presented visually. The COVID-19 data will be presented in both bar graph and table form. The socioeconimc data will be presented in table form only and will print out to your terminal. Would you like to see it? Enter 'yes', 'back', or 'exit'.\n")
+
                                 if visuals == "exit":
                                     exit()
+
                                 elif visuals == "yes":
-                                    create_and_show_figures(STATES[STATE_INPUT_NUM - 1].lower())
-                                    something_input = input("Enter 'back' to see COVID-19 data for another state or 'exit' to leave the program.\n")
+                                    # time.sleep(1.5)
+                                    create_and_show_figures(STATES[STATE_INPUT_NUM - 1])
+                                    print("The visuals will now launch in your browser.")
+                                    something_input = input("\nEnter 'back' to see COVID-19 data for another state or 'exit' to leave the program.\n")
                                     if something_input == "exit":
                                         exit()
                                     elif something_input == "back":
                                         turn = True
+
                                 elif visuals == "back":
                                     turn = False
                                     switch = True
