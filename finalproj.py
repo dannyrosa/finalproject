@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup
 from openpyxl import load_workbook
 import plotly.graph_objs as go
-# from plotly.subplots import make_subplots
 import plotly.figure_factory as ff
 import requests
 import json
@@ -9,6 +8,7 @@ import webbrowser
 import csv
 import sqlite3
 import time
+import sys
 
 CACHE_FILENAME = "covid_cache.json"
 CACHE_DICT = {}
@@ -57,12 +57,12 @@ def npr_covid_data_dict():
     cases_list = []
     cases = npr_soup.find_all("div", class_="cell amt confirmed cell-inner")
     for c in cases:
-        cases_list.append(clean_data(c.text.strip()))
+        cases_list.append(clean_nums(c.text.strip()))
 
     deaths_list = []
     deaths = npr_soup.find_all("div", class_="cell amt deaths cell-inner")
     for d in deaths:
-        deaths_list.append(clean_data(d.text.strip()))
+        deaths_list.append(clean_nums(d.text.strip()))
 
     for i in range(len(names_list)):
             covid_nums[names_list[i]] = {
@@ -71,6 +71,20 @@ def npr_covid_data_dict():
                 }
     
     return covid_nums
+
+def npr_covid_data_time_pulled():
+    '''
+    '''
+    npr_url = "https://apps.npr.org/dailygraphics/graphics/coronavirus-d3-us-map-20200312/table.html?initialWidth=1238&childId=responsive-embed-coronavirus-d3-us-map-20200312-table&parentTitle=Coronavirus%20Map%20And%20Graphics%3A%20Track%20The%20Spread%20In%20The%20U.S.%20%3A%20Shots%20-%20Health%20News%20%3A%20NPR&parentUrl=https%3A%2F%2Fwww.npr.org%2Fsections%2Fhealth-shots%2F2020%2F03%2F16%2F816707182%2Fmap-tracking-the-spread-of-the-coronavirus-in-the-u-s"
+    npr_response = requests.get(npr_url)
+    npr_soup = BeautifulSoup(npr_response.text, 'html.parser')
+
+    time = []
+    find_time = npr_soup.find("span", class_="latestTime")
+    for ft in find_time:
+        time.append(ft)
+    
+    return time[0]
 
 def build_usda_ers_dict(dict1, dict2, dict3, dict4, dict5, dict6):
 
@@ -303,7 +317,7 @@ def clean_county_covid_data():
 
     return county_dict
 
-def clean_data(data):
+def clean_nums(data):
     data = data.replace(',','')
     return int(data)
 
@@ -332,72 +346,6 @@ def convert_to_percent(values):
 def write_to_json(filename, data):
     with open(filename, "w") as file_obj:
         json.dump(data, file_obj, indent=4)
-
-def open_cache():
-    ''' Opens the cache file if it exists and loads the JSON into
-    the CACHE_DICT dictionary.
-    if the cache file doesn't exist, creates a new cache dictionary
-    
-    Parameters
-    ----------
-    None
-    
-    Returns
-    -------
-    The opened cache: dict
-    '''
-    try:
-        cache_file = open(CACHE_FILENAME, 'r')
-        cache_contents = cache_file.read()
-        cache_dict = json.loads(cache_contents)
-        cache_file.close()
-    except:
-        cache_dict = {}
-    return cache_dict
-
-def save_cache(cache_dict):
-    ''' Saves the current state of the cache to disk
-    
-    Parameters
-    ----------
-    cache_dict: dict
-        The dictionary to save
-    
-    Returns
-    -------
-    None
-    '''
-    dumped_json_cache = json.dumps(cache_dict)
-    fw = open(CACHE_FILENAME,"w")
-    fw.write(dumped_json_cache)
-    fw.close() 
-
-def make_request_with_cache(cache_key, cache_value):
-    '''Check the cache for a saved result for this cache_key:cache_value
-    combo. If the result is found, return it. Otherwise send a new 
-    request, save it, then return it.
-    
-    Parameters
-    ----------
-    cache_key: string
-        Various strings to be used as keys in CACHE_DICT
-    cache_value: string
-        Information to be saved as the value in CACHE_DICT
-    
-    Returns
-    -------
-    dict
-        the results of the query as a dictionary loaded from cache
-        JSON
-    '''
-    if cache_key in CACHE_DICT.keys():
-        print("Using cache")
-        return CACHE_DICT[cache_key]
-    else:
-        print("Fetching")
-        CACHE_DICT[cache_key] = cache_value
-        save_cache(CACHE_DICT)
-        return CACHE_DICT[cache_key]
 
 def clean_excel_data():
     # getting state socioeconomic data
@@ -601,16 +549,77 @@ def create_and_show_figures(user_input):
     time.sleep(3)
     table.show()
 
+def open_cache():
+    ''' Opens the cache file if it exists and loads the JSON into
+    the CACHE_DICT dictionary.
+    if the cache file doesn't exist, creates a new cache dictionary
+    
+    Parameters
+    ----------
+    None
+    
+    Returns
+    -------
+    The opened cache: dict
+    '''
+    try:
+        cache_file = open(CACHE_FILENAME, 'r')
+        cache_contents = cache_file.read()
+        cache_dict = json.loads(cache_contents)
+        cache_file.close()
+    except:
+        cache_dict = {}
+    return cache_dict
+
+def save_cache(cache_dict):
+    ''' Saves the current state of the cache to disk
+    
+    Parameters
+    ----------
+    cache_dict: dict
+        The dictionary to save
+    
+    Returns
+    -------
+    None
+    '''
+    dumped_json_cache = json.dumps(cache_dict)
+    fw = open(CACHE_FILENAME,"w")
+    fw.write(dumped_json_cache)
+    fw.close() 
+
+def make_request_with_cache(cache_key, cache_value):
+    '''Check the cache for a saved result for this cache_key:cache_value
+    combo. If the result is found, return it. Otherwise send a new 
+    request, save it, then return it.
+    
+    Parameters
+    ----------
+    cache_key: string
+        Various strings to be used as keys in CACHE_DICT
+    cache_value: string
+        Information to be saved as the value in CACHE_DICT
+    
+    Returns
+    -------
+    dict
+        the results of the query as a dictionary loaded from cache
+        JSON
+    '''
+    if cache_key in CACHE_DICT.keys():
+        # print("Using cache")
+        return CACHE_DICT[cache_key]
+    else:
+        # print("Fetching")
+        CACHE_DICT[cache_key] = cache_value
+        save_cache(CACHE_DICT)
+        return CACHE_DICT[cache_key]
+
 if __name__ == "__main__":
     CACHE_DICT = open_cache()
+    STATES = ["Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "District of Columbia", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"]
+    STATE_INPUT_NUM = None
     TEMP_LIST = []
-
-    while True:
-        data_to_view = input(f"\nYou can see COVID-19 data for the entire nation or a specific state. Enter 'nation', a state (including 'District of Columbia'), or 'exit':\n")
-        if data_to_view == "exit":
-            exit()
-        else:
-            create_and_show_figures(data_to_view)
 
     # clean_excel_data
     # create_database()
@@ -618,28 +627,124 @@ if __name__ == "__main__":
     # write_to_json("US_Covid.json", npr_covid_data_dict())
     # write_to_json("County_Covid.json", clean_county_covid_data())
 
-    # print(f"\nHere are the datasets available for analysis.\n")
+    print("\nWelcome!\n")
+    # time.sleep(1)
 
-    # counter = 1
-    # for k,v in build_county_url_dict().items():
-    #     print(f"[{counter}] {k}")
-    #     TEMP_LIST.append(v)
-    #     counter += 1
+    welcome_message = '''
+    This interactive program combines USDA Economic Research Service (USDA ERS) and COVID-19 data.\n
+    You will be able to see both national and state-level COVID-19 data.\n
+    If you choose to see COVID-19 data for a specific state, then you will also be able to see a number of socioeconomic data harvested from USDA ERS data about that specific state.\n
+    The socioeconomic data are:\n
+    - Population\n
+    - Median Household Income\n
+    - Unemployment Rate\n
+    - Poverty Rate\n
+    - College Completion Rate\n
+    - High School Only Completion Rate\n
+    Both national and state COVID-19 data will be presented in bar and table form if you like.\n
+    If you select a state, the socioeconomic data will print to your terminal and the COVID-19 data will launch in your browser.\n
+    '''
 
-    # while True:
-        # webpage = input(f"\nChoose a number to launch the webpage for the respective dataset or 'exit':\n")
-        # if webpage == "exit":
-        #     exit()
-        # else:
-        #     webpage_num = int(webpage)
-        #     if 0 < webpage_num <= 4:
-        #         for i in range(len(TEMP_LIST)):
-        #             launch_dataset_webpage(TEMP_LIST[webpage_num - 1])
+    for wm in welcome_message.split("\n"):
+        if wm != '':
+            print(wm.strip())
+            # time.sleep(3)
+    
+    print("First, let's begin with the USDA ERS data. Here are the data sets being used.\n")
+    # time.sleep(3)
 
-    # while True:
-        # covid_data = input(f"\nWould you like to see COVID-19 data for the United States? Enter 'yes' or 'exit'.\n")
-        # if covid_data.lower() == "exit":
-        #     exit()
-        # elif covid_data.lower() == "yes":
-        #     for k,v in npr_covid().items():
-        #         print(f"{k}: cases - {v['cases']} | deaths - {v['deaths']}")
+    change = True
+    while True:
+        while change is True:
+            counter = 1
+            for k,v in build_county_url_dict().items():
+                print(f"[{counter}] {k}")
+                TEMP_LIST.append(v)
+                counter += 1
+                # time.sleep(2)
+
+            webpage = input(f"\nChoose a number to launch the webpage for the respective dataset, 'next' to see COVID-19 data, or 'exit' to leave this program:\n")
+
+            if webpage == "exit":
+                exit()
+
+            elif webpage.isnumeric():
+                webpage_num = int(webpage)
+                if 0 < webpage_num <= 4:
+                    for i in range(len(TEMP_LIST)):
+                        launch_dataset_webpage(TEMP_LIST[webpage_num - 1])
+
+            elif webpage == "next":
+                switch = True
+                # while True:
+                while switch is True:
+                    covid_data = input("\nYou can see COVID-19 data for the entire nation or a specific state. Enter 'nation', 'state', 'back' to go back and view USDA ERS data, or 'exit'.\n")
+
+                    if covid_data.lower() == "exit":
+                        exit()
+                    
+                    elif covid_data.lower() == "back":
+                        switch = False
+                        change = True
+
+                    elif covid_data.lower() == "nation":
+                        # switch = False
+                        print(f"\nThis data is accurate as of {npr_covid_data_time_pulled()}.\n")
+                        for k,v in npr_covid_data_dict().items():
+                            print(f"{k}: Cases - {v['Cases']} | Deaths - {v['Deaths']}")
+                        
+                        print()
+
+                        # while turn is True:
+                        visuals = input("NATION This data can be presented visually. The COVID-19 data will be presented in both bar graph and table form. The socioeconimc data will be presented in table form only. Would you like to see it? Enter 'yes', 'back', or 'exit'.\n")
+                        if visuals == "exit":
+                            exit()
+                        elif visuals == "yes":
+                            create_and_show_figures(covid_data.lower())
+                            something_input = input("Enter 'back' for the previous prompt or 'exit' to leave the program.\n")
+                            if something_input == "exit":
+                                exit()
+                            elif something_input == "back":
+                                switch = True
+                        elif visuals == "back":
+                            switch = True
+                    
+                    elif covid_data.lower() == "state":
+                        turn = True
+                        while turn is True:
+                            counter = 1
+                            for s in STATES:
+                                print(f"[{counter}] {s}")
+                                counter += 1
+                            
+                            state_data = input(f"Choose a number to see COVID-19 for a specific state (by county), 'back', or 'exit' to leave this program.\n")
+
+                            if state_data == "exit":
+                                exit()
+                            
+                            elif state_data == "back":
+                                turn = False
+                                switch = True
+                            
+                            elif state_data.isnumeric():
+                                STATE_INPUT_NUM = int(state_data)
+                                if 0 < STATE_INPUT_NUM < 52:
+                                    for i in range(len(STATES)):
+                                        print(f"Here is the data for {STATES[STATE_INPUT_NUM - 1]}")
+                                        for data in access_state_sql_database(STATES[STATE_INPUT_NUM - 1]):
+                                            print(f"{data[1]}: Cases - {data[2]} | Deaths - {data[3]}")
+                                        break
+                            
+                                visuals = input("This data can be presented visually. The COVID-19 data will be presented in both bar graph and table form. The socioeconimc data will be presented in table form only and will print out to your terminal. Would you like to see it? Enter 'yes', 'back', or 'exit'.\n")
+                                if visuals == "exit":
+                                    exit()
+                                elif visuals == "yes":
+                                    create_and_show_figures(STATES[STATE_INPUT_NUM - 1].lower())
+                                    something_input = input("Enter 'back' to see COVID-19 data for another state or 'exit' to leave the program.\n")
+                                    if something_input == "exit":
+                                        exit()
+                                    elif something_input == "back":
+                                        turn = True
+                                elif visuals == "back":
+                                    turn = False
+                                    switch = True
