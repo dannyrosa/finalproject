@@ -238,7 +238,7 @@ def get_excel_data(workbook, sheet, cellrange):
     return data
 
 def create_database():
-    ''' Creates a SQL database with 4 tables: "CovidCounty", "CovidState", "SocioeconomicStates", "SocioeconomicMichigan". 
+    ''' Creates a SQL database with 3 tables: "CovidCounty", "CovidState", "SocioeconomicStates". 
     
     PARAMETERS
     ----------
@@ -255,7 +255,7 @@ def create_database():
     drop_county_covid_sql = "DROP TABLE IF EXISTS 'CovidCounty'"
     drop_state_covid_sql = "DROP TABLE IF EXISTS 'CovidState'"
     drop_states_usda_sql = "DROP TABLE IF EXISTS 'SocioeconomicStates'"
-    drop_mi_usda_sql = "DROP TABLE IF EXISTS 'SocioecnomicMichigan'"
+    drop_mi_usda_sql = "DROP TABLE IF EXISTS 'SocioeconomicMichigan'"
 
     create_county_covid_sql = '''
         CREATE TABLE IF NOT EXISTS "CovidCounty" (
@@ -291,19 +291,6 @@ def create_database():
         )
     '''
 
-    create_mi_usda_sql = '''
-    CREATE TABLE IF NOT EXISTS "SocioeconomicMichigan" (
-            "Id" INTEGER PRIMARY KEY AUTOINCREMENT,
-            "County" TEXT NOT NULL,
-            "CountyPopulation" INTEGER NOT NULL,
-            "CountyMedianIncome" INTEGER NOT NULL,
-            "CountyPovertyRate" DECIMAL NOT NULL,
-            "CountyUnemploymentRate" DECIMAL NOT NULL,
-            "CountyCompHSOnlyRate" DECIMAL NOT NULL,
-            "CountyCompCollRate" DECIMAL NOT NULL
-        )
-    '''
-
     cur.execute(drop_county_covid_sql)
     cur.execute(drop_state_covid_sql)
     cur.execute(drop_states_usda_sql)
@@ -311,13 +298,12 @@ def create_database():
     cur.execute(create_county_covid_sql)
     cur.execute(create_state_covid_sql)
     cur.execute(create_states_usda_sql)
-    cur.execute(create_mi_usda_sql)
 
     conn.commit()
     conn.close()
 
 def populate_database():
-    ''' Populates 4 tables in SQL database with data from a variety of sources.
+    ''' Populates 3 tables in SQL database with data from a variety of sources.
     
     PARAMETERS
     ----------
@@ -375,22 +361,6 @@ def populate_database():
     with open("USDA_ERS_Data.json") as file_obj:
         for k, v in json.load(file_obj).items():
             cur.execute(insert_state_ers_sql, [
-                k,
-                v['Population'],
-                v['Median Household Income'],
-                v['Poverty Rate'],
-                v['Unemployment Rate'],
-                v['Completed HS Only Rate'],
-                v['College Completion Rate']
-            ])
-
-    insert_mi_ers_sql = '''
-        INSERT INTO SocioeconomicMichigan
-        VALUES (Null, ?, ?, ?, ?, ?, ?, ?)
-    '''
-    with open("MI_USDA_ERS_Data.json") as file_obj:
-        for k, v in json.load(file_obj).items():
-            cur.execute(insert_mi_ers_sql, [
                 k,
                 v['Population'],
                 v['Median Household Income'],
@@ -575,64 +545,8 @@ def clean_excel_data():
     
     usda_ers_data = build_usda_ers_dict(pop_dict, poverty_dict, comp_hs_only_dict, comp_coll_dict, unemp_dict, med_income_dict)
 
-    # getting michigan socioeconomic data
-    mi_comp_coll_names = get_excel_data("socioeconomic_data/MIEducationReportCompColl.xlsx", "EducationReport", 'B5:B87')
-    mi_comp_coll_perc = get_excel_data("socioeconomic_data/MIEducationReportCompColl.xlsx", "EducationReport", 'I5:I87')
-
-    mi_comp_hs_only_names = get_excel_data("socioeconomic_data/MIEducationReportHSOnly.xlsx", "EducationReport", 'B5:B87')
-    mi_comp_hs_only = get_excel_data("socioeconomic_data/MIEducationReportHSOnly.xlsx", "EducationReport", 'I5:I87')
-
-    mi_pop_names = get_excel_data("socioeconomic_data/MIPopulationReport.xlsx", "PopulationReport", 'B5:B87')
-    mi_pop_num = get_excel_data("socioeconomic_data/MIPopulationReport.xlsx", "PopulationReport", 'G5:G87')
-
-    mi_poverty_names = get_excel_data("socioeconomic_data/MIPovertyReport.xlsx", "PovertyReport", 'D7:D89')
-    mi_poverty_perc = get_excel_data("socioeconomic_data/MIPovertyReport.xlsx", "PovertyReport", 'G7:G89')
-
-    mi_unemp_names = get_excel_data("socioeconomic_data/MIUnemploymentReport.xlsx", "UnemploymentReport", 'B4:B86')
-    mi_unemp_perc = get_excel_data("socioeconomic_data/MIUnemploymentReport.xlsx", "UnemploymentReport", 'K4:K86')
-
-    mi_med_income_names = get_excel_data("socioeconomic_data/MIUnemploymentReport.xlsx", "UnemploymentReport", 'B4:B86')
-    mi_med_income = get_excel_data("socioeconomic_data/MIUnemploymentReport.xlsx", "UnemploymentReport", 'L4:L86')
-
-    # cleaning michigan names
-    mi_comp_coll_names_cleaned = []
-    for counties in mi_comp_coll_names:
-        split_counties = counties.split(',')
-        mi_comp_coll_names_cleaned.append(split_counties[0])
-    
-    mi_comp_hs_only_names_cleaned = []
-    for counties in mi_comp_hs_only_names:
-        split_counties = counties.split(',')
-        mi_comp_hs_only_names_cleaned.append(split_counties[0])
-
-    mi_pop_names_cleaned = []
-    for counties in mi_pop_names:
-        split_counties = counties.replace('County','')
-        mi_pop_names_cleaned.append(split_counties.strip())
-
-    mi_unemp_names_cleaned = []
-    for counties in mi_unemp_names:
-        split_counties = counties.replace("County, MI", '')
-        mi_unemp_names_cleaned.append(split_counties.strip())
-
-    mi_med_income_names_cleaned = []
-    for counties in mi_med_income_names:
-        split_counties = counties.replace("County, MI", '')
-        mi_med_income_names_cleaned.append(split_counties.strip())
-
-    # building michigan socioeconomic dictionaries
-    mi_comp_coll_dict = build_socioecon_dict(mi_comp_coll_names_cleaned, convert_to_percent(mi_comp_coll_perc), "College Completion Rate")
-    mi_comp_hs_only_dict = build_socioecon_dict(mi_comp_hs_only_names_cleaned, convert_to_percent(mi_comp_hs_only), "Completed HS Only Rate")
-    mi_poverty_dict = build_socioecon_dict(mi_poverty_names, mi_poverty_perc, "Poverty Rate")
-    mi_pop_dict = build_socioecon_dict(mi_pop_names_cleaned, mi_pop_num, "Population")
-    mi_unemp_dict = build_socioecon_dict(mi_unemp_names_cleaned, mi_unemp_perc, "Unemployment Rate")
-    mi_med_income_dict = build_socioecon_dict(mi_med_income_names_cleaned, mi_med_income, "Median Household Income")
-
-    mi_usda_ers_data = build_usda_ers_dict(mi_pop_dict, mi_poverty_dict, mi_comp_hs_only_dict, mi_comp_coll_dict, mi_unemp_dict, mi_med_income_dict)
-
     # writing data to json
     write_to_json("USDA_ERS_Data.json", usda_ers_data)
-    write_to_json("MI_USDA_ERS_Data.json", mi_usda_ers_data)
 
 def access_state_sql_database(state):
     ''' Makes a request to SQL database to access state-specific information on COVID-19 data and returns it as a list.
@@ -846,10 +760,10 @@ if __name__ == "__main__":
     URL_LIST = []
 
     # clean_excel_data
-    # create_database()
-    # populate_database()
-    # write_to_json("US_Covid.json", npr_covid_data_dict())
-    # write_to_json("County_Covid.json", clean_county_covid_data())
+    create_database()
+    populate_database()
+    write_to_json("US_Covid.json", npr_covid_data_dict())
+    write_to_json("County_Covid.json", clean_county_covid_data())
 
     welcome_message = '''
     Welcome!\n
@@ -869,6 +783,8 @@ if __name__ == "__main__":
     '''
 
     for wm in welcome_message.split("\n"):
+        if wm == '':
+            print(wm)
         if wm != '':
             print(wm)
             time.sleep(3)
@@ -893,7 +809,7 @@ if __name__ == "__main__":
 
             elif webpage.isnumeric():
                 webpage_num = int(webpage)
-                if 1 < webpage_num <= 4:
+                if 1 <= webpage_num <= 4:
                     for i in range(len(URL_LIST)):
                         webbrowser.open((URL_LIST[webpage_num - 1]))
                 else:
@@ -916,7 +832,7 @@ if __name__ == "__main__":
                         print(f"\nThis data is accurate as of {npr_covid_data_time_pulled()}.\n")
                         for k,v in npr_covid_data_dict().items():
                             print(f"{k}: Cases - {v['Cases']} | Deaths - {v['Deaths']}")
-                            time.sleep(.5)
+                            time.sleep(.3)
 
                         visuals = input("\nThis data can be presented visually. The COVID-19 data will be presented in both bar graph and table form. The socioeconimc data will be presented in table form only. Would you like to see it? Enter 'yes', 'back', or 'exit'.\n")
                         
@@ -925,7 +841,6 @@ if __name__ == "__main__":
                         
                         elif visuals.lower() == "yes":
                             i = 0
-                            # print("The visuals will now launch in your browser.")
                             create_and_show_figures(covid_data.lower())
                             while i == 0:
                                 user_input = input("\nEnter 'back' for the previous prompt or 'exit' to leave the program.\n")
@@ -967,14 +882,14 @@ if __name__ == "__main__":
                             elif state_data.isnumeric():
                                 STATE_INPUT_NUM = int(state_data)
                                 
-                                if 1 < STATE_INPUT_NUM <= 51:
+                                if 1 <= STATE_INPUT_NUM <= 51:
                                     time.sleep(1)
                                     for i in range(len(STATES)):
                                         print(f"\nHere is the data for {STATES[STATE_INPUT_NUM - 1]}. It is accurate as of April 26th.\n")
                                         time.sleep(1)
                                         for data in access_state_sql_database(STATES[STATE_INPUT_NUM - 1]):
                                             print(f"{data[1]}: Cases - {data[2]} | Deaths - {data[3]}")
-                                            time.sleep(.5)
+                                            time.sleep(.3)
                                         break
                                 
                                 else:
@@ -988,7 +903,6 @@ if __name__ == "__main__":
                                 elif visuals.lower() == "yes":
                                     time.sleep(1)
                                     create_and_show_figures(STATES[STATE_INPUT_NUM - 1])
-                                    # print("\nThe visuals will now launch in your browser.")
                                     state_input = input("\nEnter 'back' to see COVID-19 data for another state or 'exit' to leave the program.\n")
                                     
                                     if state_input.lower() == "exit":
