@@ -759,7 +759,7 @@ if __name__ == "__main__":
     STATE_INPUT_NUM = None
     URL_LIST = []
 
-    # clean_excel_data
+    clean_excel_data()
     create_database()
     populate_database()
     write_to_json("US_Covid.json", npr_covid_data_dict())
