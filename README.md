@@ -36,10 +36,10 @@ INTERACTION 1
 INTERACTION 2
   - “Nation” to see state-level COVID-19 data
     - INTERACTION 2.5
-     - If “nation”
-      - View state-level COVID-19 data in visual form using Plotly bar graph and table
-      - “Back” to begin Interaction 2 again
-      - Exit
+      - If “nation”
+       - View state-level COVID-19 data in visual form using Plotly bar graph and table
+       - “Back” to begin Interaction 2 again
+       - Exit
   - “State” proceeds to Interaction 3
   - “Back” to go to Interaction 1
   - Exit
