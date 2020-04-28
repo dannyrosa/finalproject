@@ -2,6 +2,8 @@
 This project was created as a final project for SI 507 at the University of Michigan's School of Information.
 
 ## Program Description
+A 6-minute video of how the program runs can be found [here](https://www.loom.com/share/51bdd2026f304349955d5a374eef029c).
+
 This interactive program combines USDA Economic Research Service (USDA ERS) and COVID-19 data. You will be able to see both state- and county-level COVID-19 data.
 
 State-level COVID-19 data comes from scraping NPR's COVID-19 tracking webpage. The webpage is updated periodically and a timestamp is provided.
