@@ -891,32 +891,29 @@ if __name__ == "__main__":
                                             print(f"{data[1]}: Cases - {data[2]} | Deaths - {data[3]}")
                                             time.sleep(.3)
                                         break
+                                    
+                                    visuals = input("\nThis data can be presented visually. The COVID-19 data will be presented in both bar graph and table form. The socioeconimc data will print out to your terminal. Would you like to see it? Enter 'yes', 'back', or 'exit'.\n")
+
+                                    if visuals.lower() == "exit":
+                                        exit()
+
+                                    elif visuals.lower() == "yes":
+                                        time.sleep(1)
+                                        create_and_show_figures(STATES[STATE_INPUT_NUM - 1])
+                                        state_input = input("\nEnter 'back' to see COVID-19 data for another state or 'exit' to leave the program.\n")
+                                        
+                                        if state_input.lower() == "exit":
+                                            exit()
+                                        
+                                        elif state_input.lower() == "back":
+                                            turn = True
+
+                                    elif visuals.lower() == "back":
+                                        turn = True
+                                        switch = True
                                 
                                 else:
                                     print("Please choose a number between 1 and 51.\n")
-                            
-                                visuals = input("\nThis data can be presented visually. The COVID-19 data will be presented in both bar graph and table form. The socioeconimc data will be presented in table form only and will print out to your terminal. Would you like to see it? Enter 'yes', 'back', or 'exit'.\n")
-
-                                if visuals.lower() == "exit":
-                                    exit()
-
-                                elif visuals.lower() == "yes":
-                                    time.sleep(1)
-                                    create_and_show_figures(STATES[STATE_INPUT_NUM - 1])
-                                    state_input = input("\nEnter 'back' to see COVID-19 data for another state or 'exit' to leave the program.\n")
-                                    
-                                    if state_input.lower() == "exit":
-                                        exit()
-                                    
-                                    elif state_input.lower() == "back":
-                                        turn = True
-
-                                elif visuals.lower() == "back":
-                                    turn = True
-                                    switch = True
-                                
-                                else:
-                                    print("Not a valid entry. Try again.\n")
 
                             else:
                                 print("Not a valid entry. Try again.\n")
